@@ -25,7 +25,7 @@ const PRICING = {
 
 export default function RequestRide() {
   const [user, setUser] = useState(null);
-  const [step, setStep] = useState('input'); // input, confirm, searching, assigned
+  const [step, setStep] = useState('input'); // input, confirming, confirmed, whatsapp_payment, assigned
   const [origin, setOrigin] = useState(null);
   const [destination, setDestination] = useState(null);
   const [originAddress, setOriginAddress] = useState('');
@@ -216,6 +216,8 @@ export default function RequestRide() {
     }
 
     setLoading(true);
+    setStep('confirming');
+    
     try {
       // Create ride with pending status
       const newRide = await base44.entities.Ride.create({
@@ -236,11 +238,23 @@ export default function RequestRide() {
       });
 
       setRide(newRide);
-      setStep('whatsapp_confirm');
+
+      // Simulate availability check (2 seconds)
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Confirm ride
+      const confirmedRide = await base44.entities.Ride.update(newRide.id, {
+        status: 'confirmed'
+      });
+
+      setRide(confirmedRide);
+      setStep('confirmed');
+      toast.success('¡Viaje confirmado!');
 
     } catch (error) {
       toast.error('Error al solicitar viaje');
       console.error(error);
+      setStep('input');
     } finally {
       setLoading(false);
     }
@@ -487,10 +501,43 @@ export default function RequestRide() {
             </motion.div>
           )}
 
-          {/* WhatsApp Confirmation Step */}
-          {step === 'whatsapp_confirm' && (
+          {/* Confirming Step */}
+          {step === 'confirming' && (
             <motion.div
-              key="whatsapp"
+              key="confirming"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="p-6 text-center"
+            >
+              <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-6">
+                <div className="w-12 h-12 rounded-full border-4 border-blue-600 border-t-transparent animate-spin" />
+              </div>
+              
+              <h2 className="text-xl font-bold text-slate-900 mb-2">Confirmando viaje...</h2>
+              <p className="text-slate-500 mb-4">Verificando disponibilidad</p>
+              
+              <div className="bg-slate-50 rounded-xl p-4 space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-600">Origen</span>
+                  <span className="text-slate-900 font-medium truncate ml-2">{originAddress?.substring(0, 30)}...</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-600">Destino</span>
+                  <span className="text-slate-900 font-medium truncate ml-2">{destAddress?.substring(0, 30)}...</span>
+                </div>
+                <div className="flex items-center justify-between text-sm pt-2 border-t">
+                  <span className="text-slate-600">Precio</span>
+                  <span className="text-blue-600 font-bold text-lg">${estimate?.fare} MXN</span>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Confirmed Step */}
+          {step === 'confirmed' && (
+            <motion.div
+              key="confirmed"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
@@ -500,27 +547,46 @@ export default function RequestRide() {
                 <CheckCircle className="w-10 h-10 text-green-600" />
               </div>
               
-              <h2 className="text-2xl font-bold text-slate-900 mb-2 text-center">¡Solicitud creada!</h2>
+              <h2 className="text-2xl font-bold text-slate-900 mb-2 text-center">¡Viaje confirmado!</h2>
               <p className="text-slate-600 text-center mb-6">
-                Precio total: <span className="font-bold text-2xl text-blue-600">${estimate.fare} MXN</span>
+                Tu viaje ha sido aceptado en la app
               </p>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-                <p className="text-sm text-blue-900 font-medium mb-2">Siguiente paso:</p>
-                <p className="text-sm text-blue-800">
-                  Confirma tu viaje por WhatsApp. Recibirás instrucciones de pago y confirmación del conductor.
+              <Card className="mb-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-0">
+                <CardContent className="p-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-600">Origen</span>
+                      <span className="text-sm font-medium text-slate-900 text-right truncate ml-2">{originAddress}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-600">Destino</span>
+                      <span className="text-sm font-medium text-slate-900 text-right truncate ml-2">{destAddress}</span>
+                    </div>
+                    <div className="flex items-center justify-between pt-3 border-t border-blue-200">
+                      <span className="text-slate-700 font-medium">Precio total</span>
+                      <span className="font-bold text-2xl text-blue-600">${estimate?.fare} MXN</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+                <p className="text-sm text-amber-900 font-medium mb-1">💳 Siguiente paso: Pago</p>
+                <p className="text-xs text-amber-800">
+                  Continúa por WhatsApp para recibir los datos de pago y coordinar con el operador.
                 </p>
               </div>
 
               <a
                 href={`https://wa.me/5215574510969?text=${encodeURIComponent(
-                  `Hola, realicé una solicitud de viaje desde la app y deseo confirmar disponibilidad y el proceso de pago.\n\n` +
+                  `Hola, mi viaje ya fue aceptado en la app y quiero continuar con el proceso de pago.\n\n` +
                   `📍 Origen: ${originAddress}\n` +
                   `📍 Destino: ${destAddress}\n` +
-                  `💰 Precio: $${estimate.fare} MXN\n` +
-                  `🆔 ID: ${ride?.id}\n\n` +
-                  `Nombre: ${user.full_name}\n` +
-                  `Teléfono: ${user.phone}`
+                  `💰 Precio confirmado: $${estimate?.fare} MXN\n` +
+                  `🆔 ID de viaje: ${ride?.id}\n\n` +
+                  `Nombre: ${user?.full_name}\n` +
+                  `Teléfono: ${user?.phone || 'No proporcionado'}`
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -528,7 +594,7 @@ export default function RequestRide() {
               >
                 <Button className="w-full h-14 bg-green-600 hover:bg-green-700 rounded-xl text-lg">
                   <MessageCircle className="w-5 h-5 mr-2" />
-                  Confirmar viaje por WhatsApp
+                  Continuar por WhatsApp
                 </Button>
               </a>
 
@@ -540,7 +606,7 @@ export default function RequestRide() {
                 }}
                 className="w-full mt-3 h-12 rounded-xl"
               >
-                Volver
+                Cancelar viaje
               </Button>
             </motion.div>
           )}
