@@ -155,25 +155,60 @@ export default function DriverOnboarding() {
       });
 
       if (result.numero_ine) {
-        // Check for duplicate INE
+        // Check for duplicate INE (anti-multicuentas)
         const existingDrivers = await base44.entities.Driver.filter({ ine_number: result.numero_ine });
         const isDuplicate = existingDrivers.some(d => d.id !== driver.id);
 
         if (isDuplicate) {
           await base44.entities.Driver.update(driver.id, {
             kyc_status: 'rejected',
-            kyc_rejection_reason: 'Documento ya registrado en otra cuenta'
+            kyc_rejection_reason: 'No puedes crear una cuenta con este documento. Si crees que es un error, contacta soporte.'
           });
-          toast.error('Este documento ya está registrado. No puedes crear otra cuenta.');
+          
+          // Log the attempt
+          await base44.entities.AuditLog.create({
+            user_id: user.id,
+            user_email: user.email,
+            action: 'kyc_reject',
+            entity_type: 'Driver',
+            entity_id: driver.id,
+            details: JSON.stringify({ 
+              reason: 'duplicate_document',
+              ine_number: result.numero_ine 
+            })
+          });
+          
+          toast.error('No puedes crear una cuenta con este documento. Si crees que es un error, contacta soporte.');
+          setDriver({ ...driver, kyc_status: 'rejected', kyc_rejection_reason: 'Documento ya registrado en otra cuenta' });
           return;
         }
+
+        // Check CURP uniqueness as well
+        if (result.curp) {
+          const existingByCurp = await base44.entities.Driver.filter({ ine_curp: result.curp });
+          const curpDuplicate = existingByCurp.some(d => d.id !== driver.id);
+          
+          if (curpDuplicate) {
+            await base44.entities.Driver.update(driver.id, {
+              kyc_status: 'rejected',
+              kyc_rejection_reason: 'CURP ya registrado en otra cuenta'
+            });
+            toast.error('No puedes crear una cuenta con este CURP.');
+            setDriver({ ...driver, kyc_status: 'rejected' });
+            return;
+          }
+        }
+
+        // Determine OCR confidence
+        const ocrConfidence = result.nombre_completo && result.numero_ine ? 90 : 75;
+        const needsManualReview = ocrConfidence < 85;
 
         await base44.entities.Driver.update(driver.id, {
           ine_name: result.nombre_completo,
           ine_curp: result.curp,
           ine_number: result.numero_ine,
-          ocr_confidence: 85,
-          kyc_status: 'documents_uploaded'
+          ocr_confidence: ocrConfidence,
+          kyc_status: needsManualReview ? 'manual_review' : 'documents_uploaded'
         });
 
         setDriver({
