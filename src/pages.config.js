@@ -61,6 +61,8 @@ import Notifications from './pages/Notifications';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminKYC from './pages/AdminKYC';
 import AdminIncidents from './pages/AdminIncidents';
+import AdminPayments from './pages/AdminPayments';
+import AdminConfig from './pages/AdminConfig';
 import __Layout from './Layout.jsx';
 
 
@@ -79,6 +81,8 @@ export const PAGES = {
     "AdminDashboard": AdminDashboard,
     "AdminKYC": AdminKYC,
     "AdminIncidents": AdminIncidents,
+    "AdminPayments": AdminPayments,
+    "AdminConfig": AdminConfig,
 }
 
 export const pagesConfig = {
