@@ -73,6 +73,11 @@ export default function RequestRide() {
     try {
       const userData = await base44.auth.me();
       setUser(userData);
+      
+      // Check phone verification
+      if (!userData.phone_verified) {
+        navigate(createPageUrl('PhoneVerification'));
+      }
     } catch (error) {
       base44.auth.redirectToLogin();
     }
