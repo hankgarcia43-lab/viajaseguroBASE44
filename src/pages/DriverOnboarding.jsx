@@ -403,15 +403,41 @@ export default function DriverOnboarding() {
   const handleSubmitForReview = async () => {
     setLoading(true);
     try {
+      // Determine if needs manual review based on conditions
+      const needsManualReview = 
+        driver.requires_owner_letter || 
+        (driver.ocr_confidence && driver.ocr_confidence < 85) ||
+        !driver.owner_match;
+
       await base44.entities.Driver.update(driver.id, {
-        kyc_status: 'automated_check',
+        kyc_status: needsManualReview ? 'manual_review' : 'automated_check',
         vehicle_model: vehicleData.model,
         vehicle_color: vehicleData.color,
         vehicle_year: vehicleData.year,
         vehicle_plate: vehicleData.plate
       });
 
-      toast.success('Documentos enviados para revisión');
+      // Log the submission
+      await base44.entities.AuditLog.create({
+        user_id: user.id,
+        user_email: user.email,
+        action: 'kyc_upload',
+        entity_type: 'Driver',
+        entity_id: driver.id,
+        details: JSON.stringify({
+          ocr_confidence: driver.ocr_confidence,
+          owner_match: driver.owner_match,
+          requires_owner_letter: driver.requires_owner_letter,
+          status: needsManualReview ? 'manual_review' : 'automated_check'
+        })
+      });
+
+      if (needsManualReview) {
+        toast.success('Documentos enviados para revisión manual. Te notificaremos cuando estén aprobados.');
+      } else {
+        toast.success('Documentos enviados para verificación automática.');
+      }
+      
       navigate(createPageUrl('DriverDashboard'));
     } catch (error) {
       toast.error('Error al enviar documentos');
