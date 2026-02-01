@@ -50,6 +50,10 @@
 import Landing from './pages/Landing';
 import DriverOnboarding from './pages/DriverOnboarding';
 import RequestRide from './pages/RequestRide';
+import DriverDashboard from './pages/DriverDashboard';
+import PassengerHistory from './pages/PassengerHistory';
+import DriverHistory from './pages/DriverHistory';
+import DriverEarnings from './pages/DriverEarnings';
 import __Layout from './Layout.jsx';
 
 
@@ -57,6 +61,10 @@ export const PAGES = {
     "Landing": Landing,
     "DriverOnboarding": DriverOnboarding,
     "RequestRide": RequestRide,
+    "DriverDashboard": DriverDashboard,
+    "PassengerHistory": PassengerHistory,
+    "DriverHistory": DriverHistory,
+    "DriverEarnings": DriverEarnings,
 }
 
 export const pagesConfig = {
