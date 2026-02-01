@@ -69,6 +69,7 @@ import ReportIncident from './pages/ReportIncident';
 import RequestRide from './pages/RequestRide';
 import RouteDetails from './pages/RouteDetails';
 import SearchRoutes from './pages/SearchRoutes';
+import PhoneVerification from './pages/PhoneVerification';
 import __Layout from './Layout.jsx';
 
 
@@ -95,6 +96,7 @@ export const PAGES = {
     "RequestRide": RequestRide,
     "RouteDetails": RouteDetails,
     "SearchRoutes": SearchRoutes,
+    "PhoneVerification": PhoneVerification,
 }
 
 export const pagesConfig = {

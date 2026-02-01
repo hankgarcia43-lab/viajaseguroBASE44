@@ -20,7 +20,7 @@ const DEFAULT_CONFIG = {
   min_fare: 35,
   
   // Platform
-  commission_percentage: 20,
+  commission_percentage: 10,
   retention_window_minutes: 10,
   
   // Matching
