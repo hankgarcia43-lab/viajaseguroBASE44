@@ -63,6 +63,11 @@ import AdminKYC from './pages/AdminKYC';
 import AdminIncidents from './pages/AdminIncidents';
 import AdminPayments from './pages/AdminPayments';
 import AdminConfig from './pages/AdminConfig';
+import CreateRoute from './pages/CreateRoute';
+import SearchRoutes from './pages/SearchRoutes';
+import RouteDetails from './pages/RouteDetails';
+import MyRoutes from './pages/MyRoutes';
+import MyBookings from './pages/MyBookings';
 import __Layout from './Layout.jsx';
 
 
@@ -83,6 +88,11 @@ export const PAGES = {
     "AdminIncidents": AdminIncidents,
     "AdminPayments": AdminPayments,
     "AdminConfig": AdminConfig,
+    "CreateRoute": CreateRoute,
+    "SearchRoutes": SearchRoutes,
+    "RouteDetails": RouteDetails,
+    "MyRoutes": MyRoutes,
+    "MyBookings": MyBookings,
 }
 
 export const pagesConfig = {
