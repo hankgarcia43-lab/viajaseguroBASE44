@@ -5,7 +5,7 @@ import { createPageUrl } from '../utils';
 import { 
   Car, Users, DollarSign, AlertCircle, Shield, 
   TrendingUp, Clock, CheckCircle, XCircle, Loader2,
-  ChevronRight, Activity
+  ChevronRight, Activity, Route
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -333,12 +333,20 @@ export default function AdminDashboard() {
         </Card>
 
         {/* Quick Links */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-6">
           <Link to={createPageUrl('AdminKYC')}>
             <Card className="hover:shadow-md transition-shadow cursor-pointer">
               <CardContent className="p-4 text-center">
                 <Shield className="w-8 h-8 text-indigo-600 mx-auto mb-2" />
-                <p className="font-medium">Verificación KYC</p>
+                <p className="font-medium text-sm">Verificación KYC</p>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link to={createPageUrl('AdminRoutes')}>
+            <Card className="hover:shadow-md transition-shadow cursor-pointer">
+              <CardContent className="p-4 text-center">
+                <Route className="w-8 h-8 text-purple-600 mx-auto mb-2" />
+                <p className="font-medium text-sm">Rutas</p>
               </CardContent>
             </Card>
           </Link>
@@ -346,7 +354,7 @@ export default function AdminDashboard() {
             <Card className="hover:shadow-md transition-shadow cursor-pointer">
               <CardContent className="p-4 text-center">
                 <AlertCircle className="w-8 h-8 text-orange-600 mx-auto mb-2" />
-                <p className="font-medium">Incidentes</p>
+                <p className="font-medium text-sm">Incidentes</p>
               </CardContent>
             </Card>
           </Link>
@@ -354,7 +362,7 @@ export default function AdminDashboard() {
             <Card className="hover:shadow-md transition-shadow cursor-pointer">
               <CardContent className="p-4 text-center">
                 <DollarSign className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                <p className="font-medium">Pagos</p>
+                <p className="font-medium text-sm">Pagos</p>
               </CardContent>
             </Card>
           </Link>
@@ -362,7 +370,7 @@ export default function AdminDashboard() {
             <Card className="hover:shadow-md transition-shadow cursor-pointer">
               <CardContent className="p-4 text-center">
                 <TrendingUp className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                <p className="font-medium">Configuración</p>
+                <p className="font-medium text-sm">Configuración</p>
               </CardContent>
             </Card>
           </Link>
