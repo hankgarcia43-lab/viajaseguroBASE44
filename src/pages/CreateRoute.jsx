@@ -476,11 +476,36 @@ export default function CreateRoute() {
               />
             </div>
 
-            {/* Popular POIs */}
-            <p className="text-sm text-slate-500 mb-3">Puntos clave populares</p>
+            {/* Strategic Points - EdoMex Origins */}
+            {selectingFor === 'origin' && (
+              <>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
+                  <p className="text-xs font-medium text-slate-600 uppercase">Estado de México</p>
+                  <div className="flex-1 h-px bg-gradient-to-r from-slate-300 via-transparent to-transparent" />
+                </div>
+              </>
+            )}
+
+            {/* CDMX Destinations */}
+            {selectingFor === 'destination' && (
+              <>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="flex-1 h-px bg-gradient-to-r from-transparent via-blue-300 to-transparent" />
+                  <p className="text-xs font-medium text-blue-600 uppercase">Destinos CDMX</p>
+                  <div className="flex-1 h-px bg-gradient-to-r from-blue-300 via-transparent to-transparent" />
+                </div>
+              </>
+            )}
             
             <div className="space-y-2 max-h-[55vh] overflow-y-auto">
-              {filteredPois.map((poi) => {
+              {filteredPois
+                .filter(poi => {
+                  if (selectingFor === 'origin') return poi.zone === 'edomex' || poi.priority >= 95;
+                  if (selectingFor === 'destination') return poi.zone === 'cdmx' || poi.priority >= 90;
+                  return true;
+                })
+                .map((poi) => {
                 const Icon = getPoiIcon(poi);
                 return (
                   <button
@@ -507,10 +532,18 @@ export default function CreateRoute() {
                     </div>
                     <div className="flex-1">
                       <p className="font-medium text-slate-900">{poi.short_name || poi.name}</p>
-                      <p className="text-sm text-slate-500">{poi.name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm text-slate-500">{poi.name}</p>
+                        {poi.zone === 'edomex' && (
+                          <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-green-300 text-green-700">EdoMex</Badge>
+                        )}
+                        {poi.zone === 'cdmx' && (
+                          <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-blue-300 text-blue-700">CDMX</Badge>
+                        )}
+                      </div>
                     </div>
-                    {poi.priority >= 90 && (
-                      <Badge className="bg-amber-100 text-amber-700">Popular</Badge>
+                    {poi.priority >= 95 && (
+                      <Badge className="bg-amber-100 text-amber-700">⭐ Popular</Badge>
                     )}
                   </button>
                 );

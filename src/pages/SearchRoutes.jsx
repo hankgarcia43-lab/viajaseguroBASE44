@@ -286,36 +286,46 @@ export default function SearchRoutes() {
                         {/* Route path */}
                         <div className="space-y-2 mb-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-2 h-2 rounded-full bg-blue-500" />
-                            <span className="text-sm text-slate-700 flex-1 truncate">
-                              {route.origin_poi_name || route.origin_address}
-                            </span>
+                            <div className="w-2 h-2 rounded-full bg-green-500" />
+                            <div className="flex-1 min-w-0">
+                              <span className="text-sm text-slate-700 truncate block">
+                                {route.origin_poi_name || route.origin_address}
+                              </span>
+                            </div>
                             <span className="text-sm font-medium text-slate-900">{route.departure_time}</span>
                           </div>
+                          <div className="ml-1 border-l-2 border-dashed border-slate-300 h-3" />
                           <div className="flex items-center gap-3">
-                            <div className="w-2 h-2 rounded-full bg-green-500" />
-                            <span className="text-sm text-slate-700 flex-1 truncate">
-                              {route.dest_poi_name || route.dest_address}
-                            </span>
+                            <div className="w-2 h-2 rounded-full bg-blue-500" />
+                            <div className="flex-1 min-w-0">
+                              <span className="text-sm text-slate-700 truncate block">
+                                {route.dest_poi_name || route.dest_address}
+                              </span>
+                            </div>
                           </div>
                         </div>
 
                         {/* Details */}
-                        <div className="flex items-center justify-between pt-3 border-t">
-                          <div className="flex items-center gap-4 text-sm text-slate-500">
+                        <div className="flex items-center justify-between pt-3 border-t gap-2">
+                          <div className="flex items-center gap-3 text-sm text-slate-500 flex-wrap">
                             <span className="flex items-center gap-1">
                               <Users className="w-4 h-4" />
-                              {route.total_seats} asientos
+                              {route.total_seats}
                             </span>
                             <span className="flex items-center gap-1">
                               <Clock className="w-4 h-4" />
-                              ~{route.duration_min} min
+                              {route.duration_min}m
                             </span>
+                            {route.distance_km >= 15 && (
+                              <Badge variant="outline" className="text-[10px] py-0 px-2 border-purple-300 text-purple-700 bg-purple-50">
+                                EdoMex → CDMX
+                              </Badge>
+                            )}
                           </div>
-                          <Badge className="bg-blue-100 text-blue-700">
+                          <Badge className="bg-blue-100 text-blue-700 whitespace-nowrap">
                             {route.days_of_week?.length === 7 ? 'Diario' : 
                              route.days_of_week?.length === 5 ? 'L-V' :
-                             route.days_of_week?.join(', ')}
+                             route.days_of_week?.slice(0, 2).join(', ')}
                           </Badge>
                         </div>
                       </CardContent>
@@ -348,8 +358,30 @@ export default function SearchRoutes() {
               />
             </div>
 
+            {/* Category Headers */}
+            {selectingFor === 'origin' && (
+              <div className="flex items-center gap-2 mb-3">
+                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
+                <p className="text-xs font-medium text-slate-600 uppercase">Orígenes principales</p>
+                <div className="flex-1 h-px bg-gradient-to-r from-slate-300 via-transparent to-transparent" />
+              </div>
+            )}
+            {selectingFor === 'destination' && (
+              <div className="flex items-center gap-2 mb-3">
+                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-blue-300 to-transparent" />
+                <p className="text-xs font-medium text-blue-600 uppercase">Destinos frecuentes</p>
+                <div className="flex-1 h-px bg-gradient-to-r from-blue-300 via-transparent to-transparent" />
+              </div>
+            )}
+
             <div className="space-y-2 max-h-[55vh] overflow-y-auto">
-              {filteredPois.map((poi) => {
+              {filteredPois
+                .filter(poi => {
+                  if (selectingFor === 'origin') return poi.zone === 'edomex' || poi.priority >= 90;
+                  if (selectingFor === 'destination') return poi.zone === 'cdmx' || poi.priority >= 85;
+                  return true;
+                })
+                .map((poi) => {
                 const Icon = getPoiIcon(poi);
                 return (
                   <button
@@ -376,10 +408,18 @@ export default function SearchRoutes() {
                     </div>
                     <div className="flex-1">
                       <p className="font-medium text-slate-900">{poi.short_name || poi.name}</p>
-                      <p className="text-sm text-slate-500">{poi.name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm text-slate-500 truncate">{poi.name}</p>
+                        {poi.zone === 'edomex' && (
+                          <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-green-300 text-green-700">EdoMex</Badge>
+                        )}
+                        {poi.zone === 'cdmx' && (
+                          <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-blue-300 text-blue-700">CDMX</Badge>
+                        )}
+                      </div>
                     </div>
-                    {poi.priority >= 90 && (
-                      <Badge className="bg-amber-100 text-amber-700">Popular</Badge>
+                    {poi.priority >= 95 && (
+                      <Badge className="bg-amber-100 text-amber-700">⭐</Badge>
                     )}
                   </button>
                 );
