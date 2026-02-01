@@ -487,6 +487,64 @@ export default function RequestRide() {
             </motion.div>
           )}
 
+          {/* WhatsApp Confirmation Step */}
+          {step === 'whatsapp_confirm' && (
+            <motion.div
+              key="whatsapp"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="p-6"
+            >
+              <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
+                <CheckCircle className="w-10 h-10 text-green-600" />
+              </div>
+              
+              <h2 className="text-2xl font-bold text-slate-900 mb-2 text-center">¡Solicitud creada!</h2>
+              <p className="text-slate-600 text-center mb-6">
+                Precio total: <span className="font-bold text-2xl text-blue-600">${estimate.fare} MXN</span>
+              </p>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                <p className="text-sm text-blue-900 font-medium mb-2">Siguiente paso:</p>
+                <p className="text-sm text-blue-800">
+                  Confirma tu viaje por WhatsApp. Recibirás instrucciones de pago y confirmación del conductor.
+                </p>
+              </div>
+
+              <a
+                href={`https://wa.me/5215512345678?text=${encodeURIComponent(
+                  `Hola! Solicito viaje desde la app RideApp:\n\n` +
+                  `📍 Origen: ${originAddress}\n` +
+                  `📍 Destino: ${destAddress}\n` +
+                  `💰 Precio: $${estimate.fare} MXN\n` +
+                  `🆔 ID: ${ride?.id}\n\n` +
+                  `Nombre: ${user.full_name}\n` +
+                  `Teléfono: ${user.phone}`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full"
+              >
+                <Button className="w-full h-14 bg-green-600 hover:bg-green-700 rounded-xl text-lg">
+                  <MessageCircle className="w-5 h-5 mr-2" />
+                  Confirmar viaje por WhatsApp
+                </Button>
+              </a>
+
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setStep('input');
+                  setRide(null);
+                }}
+                className="w-full mt-3 h-12 rounded-xl"
+              >
+                Volver
+              </Button>
+            </motion.div>
+          )}
+
           {/* Searching Step */}
           {step === 'searching' && (
             <motion.div

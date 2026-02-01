@@ -82,51 +82,60 @@ export default function RouteDetails() {
       return;
     }
 
+    if (!user.phone) {
+      toast.error('Necesitas un número de teléfono registrado');
+      navigate(createPageUrl('Profile'));
+      return;
+    }
+
     setBooking(true);
     try {
       const totalPrice = seats * route.price_per_seat;
 
-      // Create booking
+      // Create booking with pending status
       const newBooking = await base44.entities.RouteBooking.create({
         route_id: route.id,
         passenger_id: user.id,
         passenger_name: user.full_name,
-        passenger_phone: user.phone || '',
+        passenger_phone: user.phone,
         driver_id: route.driver_id,
         trip_date: selectedDate,
         departure_time: route.departure_time,
         seats_booked: seats,
         total_price: totalPrice,
-        status: 'confirmed',
-        payment_status: 'preauthorized'
-      });
-
-      // Create payment ledger entry
-      await base44.entities.PaymentLedger.create({
-        transaction_type: 'preauth',
-        reference_type: 'route_booking',
-        reference_id: newBooking.id,
-        user_id: user.id,
-        user_role: 'passenger',
-        amount: totalPrice,
-        status: 'completed',
-        description: `Pre-autorización para ruta ${route.origin_poi_name} → ${route.dest_poi_name}`
+        status: 'pending',
+        payment_status: 'pending_capture'
       });
 
       // Notify driver
       await base44.entities.Notification.create({
         user_id: route.driver_id,
         type: 'ride_request',
-        title: '¡Nueva reserva de ruta!',
-        message: `${user.full_name} reservó ${seats} asiento(s) para el ${format(parseISO(selectedDate), "d 'de' MMMM", { locale: es })}`,
+        title: '¡Nueva solicitud de reserva!',
+        message: `${user.full_name} solicita ${seats} asiento(s) para el ${format(parseISO(selectedDate), "d 'de' MMMM", { locale: es })}`,
         data: JSON.stringify({ booking_id: newBooking.id, route_id: route.id })
       });
 
-      toast.success('¡Reserva confirmada!');
-      navigate(createPageUrl('MyBookings'));
+      // Open WhatsApp
+      const whatsappMessage = encodeURIComponent(
+        `Hola! Solicito reserva desde la app RideApp:\n\n` +
+        `🚗 Ruta: ${route.origin_poi_name || route.origin_address} → ${route.dest_poi_name || route.dest_address}\n` +
+        `📅 Fecha: ${format(parseISO(selectedDate), "d 'de' MMMM", { locale: es })}\n` +
+        `🕐 Hora: ${route.departure_time}\n` +
+        `👥 Asientos: ${seats}\n` +
+        `💰 Total: $${totalPrice} MXN\n` +
+        `🆔 ID: ${newBooking.id}\n\n` +
+        `Nombre: ${user.full_name}\n` +
+        `Teléfono: ${user.phone}`
+      );
+      
+      window.open(`https://wa.me/5215512345678?text=${whatsappMessage}`, '_blank');
+      
+      toast.success('Solicitud creada - Confirma por WhatsApp');
+      setTimeout(() => navigate(createPageUrl('MyBookings')), 2000);
 
     } catch (error) {
-      toast.error('Error al reservar');
+      toast.error('Error al crear solicitud');
       console.error(error);
     } finally {
       setBooking(false);
@@ -292,10 +301,10 @@ export default function RouteDetails() {
         </Card>
 
         {/* Payment Info */}
-        <Alert className="mb-6 border-blue-200 bg-blue-50">
-          <Shield className="h-4 w-4 text-blue-600" />
-          <AlertDescription className="text-blue-800">
-            Se realizará una pre-autorización en tu tarjeta. El cargo se capturará después de completar el viaje.
+        <Alert className="mb-6 border-amber-200 bg-amber-50">
+          <AlertCircle className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-800 font-medium">
+            💳 El pago es previo para confirmar el viaje. Recibirás instrucciones por WhatsApp.
           </AlertDescription>
         </Alert>
       </div>
@@ -315,14 +324,14 @@ export default function RouteDetails() {
             <Button
               onClick={handleBooking}
               disabled={booking}
-              className="flex-1 h-14 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-xl text-lg"
+              className="flex-1 h-14 bg-green-600 hover:bg-green-700 rounded-xl text-lg"
             >
               {booking ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 <>
-                  <CheckCircle className="w-5 h-5 mr-2" />
-                  Reservar ahora
+                  <MessageCircle className="w-5 h-5 mr-2" />
+                  Confirmar por WhatsApp
                 </>
               )}
             </Button>
