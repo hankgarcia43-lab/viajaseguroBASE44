@@ -240,9 +240,12 @@ export default function AdminConfig() {
                   value={[config.commission_percentage]}
                   onValueChange={([value]) => updateConfig('commission_percentage', value)}
                   max={15}
-                  min={5}
+                  min={10}
                   step={1}
                 />
+                <p className="text-xs text-amber-600 mt-1 font-medium">
+                  Comisión base: 10%. Máximo permitido: 15%
+                </p>
                 <p className="text-xs text-slate-500 mt-2">
                   El conductor recibirá el {100 - config.commission_percentage}% del total del viaje
                 </p>

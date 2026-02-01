@@ -70,6 +70,7 @@ import RequestRide from './pages/RequestRide';
 import RouteDetails from './pages/RouteDetails';
 import SearchRoutes from './pages/SearchRoutes';
 import PhoneVerification from './pages/PhoneVerification';
+import PhoneVerify from './pages/PhoneVerify';
 import __Layout from './Layout.jsx';
 
 
@@ -97,6 +98,7 @@ export const PAGES = {
     "RouteDetails": RouteDetails,
     "SearchRoutes": SearchRoutes,
     "PhoneVerification": PhoneVerification,
+    "PhoneVerify": PhoneVerify,
 }
 
 export const pagesConfig = {

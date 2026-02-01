@@ -27,6 +27,12 @@ export default function Layout({ children, currentPageName }) {
       if (isAuth) {
         const userData = await base44.auth.me();
         setUser(userData);
+
+        // Check phone verification
+        if (!userData.phone_verified && !['PhoneVerify', 'Landing'].includes(currentPageName)) {
+          navigate(createPageUrl('PhoneVerify'));
+          return;
+        }
         
         // Check if user is a driver
         const drivers = await base44.entities.Driver.filter({ user_id: userData.id });
@@ -52,7 +58,7 @@ export default function Layout({ children, currentPageName }) {
   };
 
   // Public pages that don't need auth
-  const publicPages = ['Landing', 'Login', 'PhoneVerification'];
+  const publicPages = ['Landing', 'Login'];
   const isPublicPage = publicPages.includes(currentPageName);
 
   // Admin pages

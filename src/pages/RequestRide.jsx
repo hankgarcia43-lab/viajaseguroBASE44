@@ -73,11 +73,6 @@ export default function RequestRide() {
     try {
       const userData = await base44.auth.me();
       setUser(userData);
-      
-      // Check phone verification
-      if (!userData.phone_verified) {
-        navigate(createPageUrl('PhoneVerification'));
-      }
     } catch (error) {
       base44.auth.redirectToLogin();
     }
@@ -407,14 +402,9 @@ export default function RequestRide() {
               exit={{ opacity: 0, y: -20 }}
               className="p-6"
             >
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-slate-900">¿A dónde vas?</h2>
-                <Link to={createPageUrl('SearchRoutes')}>
-                  <Button variant="outline" size="sm" className="flex items-center gap-2">
-                    <Search className="w-4 h-4" />
-                    Rutas
-                  </Button>
-                </Link>
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-slate-900 mb-1">¿A dónde vas?</h2>
+                <p className="text-sm text-slate-500">Viajes económicos en rutas necesarias</p>
               </div>
 
               {/* Origin Input */}
@@ -470,8 +460,9 @@ export default function RequestRide() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-xs text-slate-500">Tarifa estimada</p>
+                          <p className="text-xs text-slate-500">Tarifa total</p>
                           <p className="text-2xl font-bold text-blue-600">${estimate.fare}</p>
+                          <p className="text-xs text-green-600">Sin cargos extra</p>
                         </div>
                       </div>
                     </CardContent>
