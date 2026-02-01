@@ -324,14 +324,21 @@ export default function DriverOnboarding() {
           }
         });
 
-        const ownerMatch = driver.ine_name && result.nombre_propietario &&
-          driver.ine_name.toLowerCase().includes(result.nombre_propietario.toLowerCase().split(' ')[0]);
+        // Strict owner match validation
+        const normalizedINEName = (driver.ine_name || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const normalizedOwnerName = (result.nombre_propietario || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        
+        // Check if names match (at least first two words should match)
+        const ineWords = normalizedINEName.split(' ').filter(w => w.length > 2);
+        const ownerWords = normalizedOwnerName.split(' ').filter(w => w.length > 2);
+        const matchingWords = ineWords.filter(word => ownerWords.includes(word));
+        const ownerMatch = matchingWords.length >= 2;
 
         await base44.entities.Driver.update(driver.id, {
           circulation_card: fileUrl,
           circulation_owner_name: result.nombre_propietario,
           vehicle_plate: result.placas || vehicleData.plate,
-          vehicle_model: `${result.marca} ${result.modelo}` || vehicleData.model,
+          vehicle_model: `${result.marca || ''} ${result.modelo || ''}`.trim() || vehicleData.model,
           vehicle_year: result.año || vehicleData.year,
           owner_match: ownerMatch,
           requires_owner_letter: !ownerMatch
@@ -340,14 +347,15 @@ export default function DriverOnboarding() {
         setDriver({ 
           ...driver, 
           circulation_card: fileUrl,
+          circulation_owner_name: result.nombre_propietario,
           owner_match: ownerMatch,
           requires_owner_letter: !ownerMatch
         });
 
         if (!ownerMatch) {
-          toast.warning('El vehículo no está a tu nombre. Necesitarás subir una carta responsiva.');
+          toast.warning('El vehículo no está a tu nombre. Sube una carta responsiva firmada por el propietario y copia de su INE para continuar.');
         } else {
-          toast.success('Tarjeta de circulación verificada');
+          toast.success('Tarjeta de circulación verificada - coincide con tu INE');
         }
         setCurrentStep(4);
       } catch (error) {
