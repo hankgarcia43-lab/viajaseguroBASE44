@@ -298,7 +298,7 @@ export default function DriverDashboard() {
 
       // Calculate final fare (could adjust based on actual route)
       const fareFinal = activeRide.fare_estimated;
-      const platformFee = Math.round(fareFinal * 0.2); // 20% commission
+      const platformFee = Math.round(fareFinal * 0.1); // 10% commission
       const driverPayout = fareFinal - platformFee;
 
       await base44.entities.Ride.update(activeRide.id, {
@@ -314,7 +314,7 @@ export default function DriverDashboard() {
         driver_id: driver.id,
         amount: fareFinal,
         fee_platform: platformFee,
-        fee_percentage: 20,
+        fee_percentage: 10,
         payout_driver: driverPayout,
         status: 'pending_capture',
         retention_window_ends: retentionEnds

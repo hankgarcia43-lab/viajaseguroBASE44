@@ -37,13 +37,13 @@ export default function Landing() {
               transition={{ duration: 0.6 }}
             >
               <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight">
-                Tu viaje seguro<br />
+                Transporte accesible<br />
                 <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
-                  comienza aquí
+                  para todos
                 </span>
               </h1>
               <p className="text-lg text-slate-300 mb-10 max-w-md mx-auto">
-                Conectamos conductores verificados con pasajeros en la Ciudad de México. Viajes seguros, pagos protegidos.
+                Viajes económicos y confiables en rutas necesarias de CDMX. Tarifa justa, conductores verificados.
               </p>
             </motion.div>
 
@@ -77,10 +77,10 @@ export default function Landing() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-              ¿Por qué elegirnos?
+              Transporte accesible y confiable
             </h2>
             <p className="text-slate-600 max-w-2xl mx-auto">
-              Nuestra plataforma está diseñada para ofrecer la mejor experiencia de viaje, con seguridad y confianza como prioridades.
+              Una alternativa económica al transporte tradicional con la seguridad de conductores verificados y tarifas claras.
             </p>
           </div>
 
@@ -94,8 +94,8 @@ export default function Landing() {
               },
               {
                 icon: CreditCard,
-                title: 'Pagos seguros',
-                description: 'Tu pago está protegido hasta 10 minutos después del viaje para tu seguridad.',
+                title: 'Tarifas accesibles',
+                description: 'Precios justos y transparentes. Sin cargos ocultos ni sorpresas.',
                 color: 'indigo'
               },
               {
@@ -144,10 +144,10 @@ export default function Landing() {
               </div>
               <div className="space-y-6">
                 {[
-                  { step: '1', title: 'Regístrate', desc: 'Crea tu cuenta con tu número de teléfono' },
-                  { step: '2', title: 'Solicita un viaje', desc: 'Ingresa tu destino y confirma' },
-                  { step: '3', title: 'Viaja seguro', desc: 'Tu conductor verificado te llevará' },
-                  { step: '4', title: 'Paga fácil', desc: 'Pago automático y seguro' }
+                  { step: '1', title: 'Regístrate', desc: 'Verifica tu número telefónico' },
+                  { step: '2', title: 'Solicita viaje', desc: 'Elige tu destino y tarifa' },
+                  { step: '3', title: 'Viaja tranquilo', desc: 'Conductor verificado' },
+                  { step: '4', title: 'Tarifa fija', desc: 'Sin cargos sorpresa' }
                 ].map((item, index) => (
                   <div key={item.step} className="flex gap-4">
                     <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
@@ -172,10 +172,10 @@ export default function Landing() {
               </div>
               <div className="space-y-6">
                 {[
-                  { step: '1', title: 'Regístrate', desc: 'Crea tu cuenta de conductor' },
-                  { step: '2', title: 'Verifica tu identidad', desc: 'Sube INE, licencia y documentos' },
-                  { step: '3', title: 'Recibe viajes', desc: 'Acepta solicitudes cercanas' },
-                  { step: '4', title: 'Genera ingresos', desc: 'Cobra directamente en la plataforma' }
+                  { step: '1', title: 'Regístrate', desc: 'Verifica tu número telefónico' },
+                  { step: '2', title: 'Sube documentos', desc: 'INE, licencia y vehículo' },
+                  { step: '3', title: 'Viajes constantes', desc: 'Rutas necesarias en tu zona' },
+                  { step: '4', title: 'Solo 10% comisión', desc: 'Ingresos justos y constantes' }
                 ].map((item, index) => (
                   <div key={item.step} className="flex gap-4">
                     <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
@@ -197,10 +197,10 @@ export default function Landing() {
       <div className="bg-gradient-to-br from-blue-600 to-indigo-600 py-20 px-6">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-            ¿Listo para comenzar?
+            Transporte accesible para todos
           </h2>
           <p className="text-lg text-white/80 mb-10">
-            Únete a miles de usuarios que ya confían en nosotros para sus viajes diarios.
+            Tarifa justa, viajes seguros en las rutas que necesitas. Únete ahora.
           </p>
           <Link to={createPageUrl('Login')}>
             <Button size="lg" className="bg-white text-blue-600 hover:bg-slate-100 px-10 py-6 text-lg rounded-2xl shadow-xl">

@@ -47,54 +47,54 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
-import Landing from './pages/Landing';
-import DriverOnboarding from './pages/DriverOnboarding';
-import RequestRide from './pages/RequestRide';
+import AdminConfig from './pages/AdminConfig';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminIncidents from './pages/AdminIncidents';
+import AdminKYC from './pages/AdminKYC';
+import AdminPayments from './pages/AdminPayments';
+import AdminRoutes from './pages/AdminRoutes';
+import CreateRoute from './pages/CreateRoute';
 import DriverDashboard from './pages/DriverDashboard';
-import PassengerHistory from './pages/PassengerHistory';
-import DriverHistory from './pages/DriverHistory';
 import DriverEarnings from './pages/DriverEarnings';
+import DriverHistory from './pages/DriverHistory';
+import DriverOnboarding from './pages/DriverOnboarding';
+import Landing from './pages/Landing';
+import MyBookings from './pages/MyBookings';
+import MyRoutes from './pages/MyRoutes';
+import Notifications from './pages/Notifications';
+import PassengerHistory from './pages/PassengerHistory';
+import Profile from './pages/Profile';
 import RateRide from './pages/RateRide';
 import ReportIncident from './pages/ReportIncident';
-import Profile from './pages/Profile';
-import Notifications from './pages/Notifications';
-import AdminDashboard from './pages/AdminDashboard';
-import AdminKYC from './pages/AdminKYC';
-import AdminIncidents from './pages/AdminIncidents';
-import AdminPayments from './pages/AdminPayments';
-import AdminConfig from './pages/AdminConfig';
-import CreateRoute from './pages/CreateRoute';
-import SearchRoutes from './pages/SearchRoutes';
+import RequestRide from './pages/RequestRide';
 import RouteDetails from './pages/RouteDetails';
-import MyRoutes from './pages/MyRoutes';
-import MyBookings from './pages/MyBookings';
-import AdminRoutes from './pages/AdminRoutes';
+import SearchRoutes from './pages/SearchRoutes';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Landing": Landing,
-    "DriverOnboarding": DriverOnboarding,
-    "RequestRide": RequestRide,
+    "AdminConfig": AdminConfig,
+    "AdminDashboard": AdminDashboard,
+    "AdminIncidents": AdminIncidents,
+    "AdminKYC": AdminKYC,
+    "AdminPayments": AdminPayments,
+    "AdminRoutes": AdminRoutes,
+    "CreateRoute": CreateRoute,
     "DriverDashboard": DriverDashboard,
-    "PassengerHistory": PassengerHistory,
-    "DriverHistory": DriverHistory,
     "DriverEarnings": DriverEarnings,
+    "DriverHistory": DriverHistory,
+    "DriverOnboarding": DriverOnboarding,
+    "Landing": Landing,
+    "MyBookings": MyBookings,
+    "MyRoutes": MyRoutes,
+    "Notifications": Notifications,
+    "PassengerHistory": PassengerHistory,
+    "Profile": Profile,
     "RateRide": RateRide,
     "ReportIncident": ReportIncident,
-    "Profile": Profile,
-    "Notifications": Notifications,
-    "AdminDashboard": AdminDashboard,
-    "AdminKYC": AdminKYC,
-    "AdminIncidents": AdminIncidents,
-    "AdminPayments": AdminPayments,
-    "AdminConfig": AdminConfig,
-    "CreateRoute": CreateRoute,
-    "SearchRoutes": SearchRoutes,
+    "RequestRide": RequestRide,
     "RouteDetails": RouteDetails,
-    "MyRoutes": MyRoutes,
-    "MyBookings": MyBookings,
-    "AdminRoutes": AdminRoutes,
+    "SearchRoutes": SearchRoutes,
 }
 
 export const pagesConfig = {
