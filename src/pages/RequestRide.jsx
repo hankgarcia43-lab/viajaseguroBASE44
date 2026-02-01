@@ -7,6 +7,7 @@ import {
   MapPin, Navigation, Search, X, Loader2, 
   Clock, DollarSign, Car, ChevronRight, AlertCircle
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -401,7 +402,15 @@ export default function RequestRide() {
               exit={{ opacity: 0, y: -20 }}
               className="p-6"
             >
-              <h2 className="text-xl font-bold text-slate-900 mb-4">¿A dónde vas?</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-slate-900">¿A dónde vas?</h2>
+                <Link to={createPageUrl('SearchRoutes')}>
+                  <Button variant="outline" size="sm" className="flex items-center gap-2">
+                    <Search className="w-4 h-4" />
+                    Rutas
+                  </Button>
+                </Link>
+              </div>
 
               {/* Origin Input */}
               <div 
