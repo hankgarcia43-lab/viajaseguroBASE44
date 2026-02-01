@@ -217,7 +217,7 @@ export default function RequestRide() {
 
     setLoading(true);
     try {
-      // Create ride
+      // Create ride with pending status
       const newRide = await base44.entities.Ride.create({
         passenger_id: user.id,
         passenger_name: user.full_name,
@@ -231,17 +231,12 @@ export default function RequestRide() {
         distance_km: parseFloat(estimate.distance),
         duration_min: estimate.duration,
         fare_estimated: estimate.fare,
-        status: 'searching',
-        requested_at: new Date().toISOString(),
-        search_radius_km: 3
+        status: 'requested',
+        requested_at: new Date().toISOString()
       });
 
       setRide(newRide);
-      setStep('searching');
-      setSearchTimeout(60); // 60 seconds timeout
-
-      // Find nearby drivers
-      await findNearbyDrivers(newRide);
+      setStep('whatsapp_confirm');
 
     } catch (error) {
       toast.error('Error al solicitar viaje');
@@ -404,7 +399,7 @@ export default function RequestRide() {
             >
               <div className="mb-6">
                 <h2 className="text-2xl font-bold text-slate-900 mb-1">¿A dónde vas?</h2>
-                <p className="text-sm text-slate-500">Viajes económicos en rutas necesarias</p>
+                <p className="text-sm text-slate-500">Precio claro desde el inicio</p>
               </div>
 
               {/* Origin Input */}
@@ -460,18 +455,23 @@ export default function RequestRide() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-xs text-slate-500">Tarifa total</p>
-                          <p className="text-2xl font-bold text-blue-600">${estimate.fare}</p>
-                          <p className="text-xs text-green-600">Sin cargos extra</p>
+                          <p className="text-xs text-slate-500">Precio final</p>
+                          <p className="text-2xl font-bold text-blue-600">${estimate.fare} MXN</p>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
 
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mt-4">
+                    <p className="text-sm font-medium text-amber-800 text-center">
+                      💳 El pago es previo para confirmar el viaje
+                    </p>
+                  </div>
+
                   <Button
                     onClick={handleRequestRide}
                     disabled={loading || !origin || !destination}
-                    className="w-full mt-4 h-14 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-xl text-lg"
+                    className="w-full mt-3 h-14 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-xl text-lg"
                   >
                     {loading ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
