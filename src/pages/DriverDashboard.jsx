@@ -6,7 +6,7 @@ import MapView from '../components/map/MapView';
 import { 
   Power, MapPin, Navigation, Clock, DollarSign, 
   Star, ChevronRight, AlertCircle, CheckCircle, X,
-  Phone, MessageCircle, Loader2, Car, Shield
+  Phone, MessageCircle, Loader2, Car, Shield, Route, Plus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -483,14 +483,48 @@ export default function DriverDashboard() {
                 </div>
               )}
 
+              {/* Quick Actions - Routes */}
+              {driver?.kyc_status === 'approved' && (
+                <div className="mb-6">
+                  <h3 className="font-bold text-slate-900 mb-3">Rutas compartidas</h3>
+                  <Link to={createPageUrl('CreateRoute')}>
+                    <Card className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white hover:shadow-lg transition-shadow">
+                      <CardContent className="p-4 flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                          <Plus className="w-6 h-6" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-bold">Crear ruta rápida</p>
+                          <p className="text-white/80 text-sm">Publica tu ruta en menos de 1 minuto</p>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-white/60" />
+                      </CardContent>
+                    </Card>
+                  </Link>
+                  <Link to={createPageUrl('MyRoutes')} className="block mt-2">
+                    <Card className="hover:shadow-md transition-shadow">
+                      <CardContent className="p-4 flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                          <Route className="w-5 h-5 text-purple-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-slate-900">Ver mis rutas</p>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-slate-400" />
+                      </CardContent>
+                    </Card>
+                  </Link>
+                </div>
+              )}
+
               {/* No requests */}
               {pendingRequests.length === 0 && isOnline && (
-                <div className="text-center py-12">
-                  <div className="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-4">
-                    <Car className="w-10 h-10 text-blue-600" />
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-4">
+                    <Car className="w-8 h-8 text-blue-600" />
                   </div>
                   <h3 className="text-lg font-bold text-slate-900 mb-2">Esperando viajes</h3>
-                  <p className="text-slate-500">Te notificaremos cuando haya una solicitud</p>
+                  <p className="text-slate-500 text-sm">Te notificaremos cuando haya una solicitud</p>
                 </div>
               )}
 
