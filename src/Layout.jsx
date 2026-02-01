@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { createPageUrl } from './utils';
 import { 
   Car, User, Menu, X, Home, Clock, Settings, LogOut, 
-  Shield, Bell, ChevronRight, MapPin
+  Shield, Bell, ChevronRight, MapPin, Route, Search, Calendar
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -60,8 +60,12 @@ export default function Layout({ children, currentPageName }) {
   const isAdminPage = adminPages.includes(currentPageName);
 
   // Driver pages
-  const driverPages = ['DriverDashboard', 'DriverOnboarding', 'DriverEarnings', 'DriverHistory'];
+  const driverPages = ['DriverDashboard', 'DriverOnboarding', 'DriverEarnings', 'DriverHistory', 'CreateRoute', 'MyRoutes'];
   const isDriverPage = driverPages.includes(currentPageName);
+
+  // Route pages (passenger)
+  const routePages = ['SearchRoutes', 'RouteDetails', 'MyBookings'];
+  const isRoutePage = routePages.includes(currentPageName);
 
   if (isPublicPage) {
     return (
@@ -73,12 +77,15 @@ export default function Layout({ children, currentPageName }) {
 
   const passengerNavItems = [
     { name: 'Solicitar viaje', icon: MapPin, page: 'RequestRide' },
-    { name: 'Mis viajes', icon: Clock, page: 'PassengerHistory' },
+    { name: 'Rutas', icon: Search, page: 'SearchRoutes' },
+    { name: 'Mis reservas', icon: Calendar, page: 'MyBookings' },
+    { name: 'Historial', icon: Clock, page: 'PassengerHistory' },
     { name: 'Perfil', icon: User, page: 'Profile' },
   ];
 
   const driverNavItems = [
     { name: 'Panel conductor', icon: Car, page: 'DriverDashboard' },
+    { name: 'Mis rutas', icon: Route, page: 'MyRoutes' },
     { name: 'Historial', icon: Clock, page: 'DriverHistory' },
     { name: 'Ganancias', icon: Settings, page: 'DriverEarnings' },
     { name: 'Perfil', icon: User, page: 'Profile' },
@@ -87,6 +94,7 @@ export default function Layout({ children, currentPageName }) {
   const adminNavItems = [
     { name: 'Dashboard', icon: Home, page: 'AdminDashboard' },
     { name: 'KYC', icon: Shield, page: 'AdminKYC' },
+    { name: 'Rutas', icon: Route, page: 'AdminRoutes' },
     { name: 'Incidentes', icon: Bell, page: 'AdminIncidents' },
     { name: 'Pagos', icon: Settings, page: 'AdminPayments' },
     { name: 'Configuración', icon: Settings, page: 'AdminConfig' },
