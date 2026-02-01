@@ -68,6 +68,7 @@ import SearchRoutes from './pages/SearchRoutes';
 import RouteDetails from './pages/RouteDetails';
 import MyRoutes from './pages/MyRoutes';
 import MyBookings from './pages/MyBookings';
+import AdminRoutes from './pages/AdminRoutes';
 import __Layout from './Layout.jsx';
 
 
@@ -93,6 +94,7 @@ export const PAGES = {
     "RouteDetails": RouteDetails,
     "MyRoutes": MyRoutes,
     "MyBookings": MyBookings,
+    "AdminRoutes": AdminRoutes,
 }
 
 export const pagesConfig = {
