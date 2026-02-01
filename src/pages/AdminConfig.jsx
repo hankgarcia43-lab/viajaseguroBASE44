@@ -239,7 +239,7 @@ export default function AdminConfig() {
                 <Slider
                   value={[config.commission_percentage]}
                   onValueChange={([value]) => updateConfig('commission_percentage', value)}
-                  max={50}
+                  max={15}
                   min={5}
                   step={1}
                 />

@@ -52,7 +52,7 @@ export default function Layout({ children, currentPageName }) {
   };
 
   // Public pages that don't need auth
-  const publicPages = ['Landing', 'Login'];
+  const publicPages = ['Landing', 'Login', 'PhoneVerification'];
   const isPublicPage = publicPages.includes(currentPageName);
 
   // Admin pages
