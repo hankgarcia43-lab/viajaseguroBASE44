@@ -513,8 +513,8 @@ export default function RequestRide() {
               </div>
 
               <a
-                href={`https://wa.me/5215512345678?text=${encodeURIComponent(
-                  `Hola! Solicito viaje desde la app RideApp:\n\n` +
+                href={`https://wa.me/5215574510969?text=${encodeURIComponent(
+                  `Hola, realicé una solicitud de viaje desde la app y deseo confirmar disponibilidad y el proceso de pago.\n\n` +
                   `📍 Origen: ${originAddress}\n` +
                   `📍 Destino: ${destAddress}\n` +
                   `💰 Precio: $${estimate.fare} MXN\n` +

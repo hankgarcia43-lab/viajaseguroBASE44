@@ -118,7 +118,7 @@ export default function RouteDetails() {
 
       // Open WhatsApp
       const whatsappMessage = encodeURIComponent(
-        `Hola! Solicito reserva desde la app RideApp:\n\n` +
+        `Hola, realicé una solicitud de viaje desde la app y deseo confirmar disponibilidad y el proceso de pago.\n\n` +
         `🚗 Ruta: ${route.origin_poi_name || route.origin_address} → ${route.dest_poi_name || route.dest_address}\n` +
         `📅 Fecha: ${format(parseISO(selectedDate), "d 'de' MMMM", { locale: es })}\n` +
         `🕐 Hora: ${route.departure_time}\n` +
@@ -129,7 +129,7 @@ export default function RouteDetails() {
         `Teléfono: ${user.phone}`
       );
       
-      window.open(`https://wa.me/5215512345678?text=${whatsappMessage}`, '_blank');
+      window.open(`https://wa.me/5215574510969?text=${whatsappMessage}`, '_blank');
       
       toast.success('Solicitud creada - Confirma por WhatsApp');
       setTimeout(() => navigate(createPageUrl('MyBookings')), 2000);
