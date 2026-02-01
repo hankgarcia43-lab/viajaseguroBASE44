@@ -128,10 +128,16 @@ export default function Profile() {
               <div>
                 <Label>Teléfono</Label>
                 <Input
+                  type="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  placeholder="5512345678"
+                  maxLength={10}
                   className="mt-1"
                 />
+                <p className="text-xs text-slate-500 mt-1">
+                  Este número se usará para confirmar tu viaje por WhatsApp.
+                </p>
               </div>
               <div className="flex gap-3">
                 <Button variant="outline" onClick={() => setEditing(false)} className="flex-1">
