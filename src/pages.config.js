@@ -58,6 +58,9 @@ import RateRide from './pages/RateRide';
 import ReportIncident from './pages/ReportIncident';
 import Profile from './pages/Profile';
 import Notifications from './pages/Notifications';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminKYC from './pages/AdminKYC';
+import AdminIncidents from './pages/AdminIncidents';
 import __Layout from './Layout.jsx';
 
 
@@ -73,6 +76,9 @@ export const PAGES = {
     "ReportIncident": ReportIncident,
     "Profile": Profile,
     "Notifications": Notifications,
+    "AdminDashboard": AdminDashboard,
+    "AdminKYC": AdminKYC,
+    "AdminIncidents": AdminIncidents,
 }
 
 export const pagesConfig = {
