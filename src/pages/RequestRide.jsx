@@ -5,7 +5,7 @@ import { createPageUrl } from '../utils';
 import MapView from '../components/map/MapView';
 import { 
   MapPin, Navigation, Search, X, Loader2, 
-  Clock, DollarSign, Car, ChevronRight, AlertCircle
+  Clock, DollarSign, Car, ChevronRight, AlertCircle, MessageCircle, CheckCircle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
