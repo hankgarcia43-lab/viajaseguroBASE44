@@ -23,7 +23,7 @@ export default function Landing() {
               </div>
               <span className="font-bold text-xl text-white">RideApp</span>
             </div>
-            <Link to={createPageUrl('LoginPasajero')}>
+            <Link to={createPageUrl('WelcomePasajero')}>
               <Button variant="ghost" className="text-white hover:bg-white/10">
                 Iniciar sesión
               </Button>
@@ -54,14 +54,14 @@ export default function Landing() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="flex flex-col sm:flex-row gap-4 justify-center"
             >
-              <Link to={createPageUrl('LoginPasajero')}>
+              <Link to={createPageUrl('WelcomePasajero')}>
                 <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-6 text-lg rounded-2xl shadow-xl shadow-blue-500/25">
                   <User className="w-5 h-5 mr-2" />
                   Viaja ahora
                   <ChevronRight className="w-5 h-5 ml-2" />
                 </Button>
               </Link>
-              <Link to={createPageUrl('LoginChofer')}>
+              <Link to={createPageUrl('WelcomeChofer')}>
                 <Button size="lg" variant="outline" className="w-full sm:w-auto border-2 border-white/20 bg-white/5 text-white hover:bg-white/10 px-8 py-6 text-lg rounded-2xl">
                   <Car className="w-5 h-5 mr-2" />
                   Gana dinero
@@ -203,7 +203,7 @@ export default function Landing() {
           <p className="text-lg text-white/80 mb-10">
             Viaja económico. Gana bien. Sin complicaciones.
           </p>
-          <Link to={createPageUrl('LoginPasajero')}>
+          <Link to={createPageUrl('WelcomePasajero')}>
             <Button size="lg" className="bg-white text-blue-600 hover:bg-slate-100 px-10 py-6 text-lg rounded-2xl shadow-xl">
               Registrarse gratis
               <ChevronRight className="w-5 h-5 ml-2" />
