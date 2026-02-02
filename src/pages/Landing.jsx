@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '../utils';
 import { Car, User, Shield, Clock, CreditCard, Star, ChevronRight, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,11 +23,11 @@ export default function Landing() {
               </div>
               <span className="font-bold text-xl text-white">RideApp</span>
             </div>
-            <Link to={createPageUrl('Login')}>
+            <button onClick={() => base44.auth.redirectToLogin()}>
               <Button variant="ghost" className="text-white hover:bg-white/10">
                 Iniciar sesión
               </Button>
-            </Link>
+            </button>
           </header>
 
           {/* Hero Content */}
@@ -37,13 +38,13 @@ export default function Landing() {
               transition={{ duration: 0.6 }}
             >
               <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight">
-                Transporte accesible<br />
+                Viaja seguro.<br />
                 <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
-                  para todos
+                  Viaja económico.
                 </span>
               </h1>
               <p className="text-lg text-slate-300 mb-10 max-w-md mx-auto">
-                Viajes económicos y confiables en rutas necesarias de CDMX. Tarifa justa, conductores verificados.
+                De EdoMex a CDMX con precio fijo. Sin sorpresas.
               </p>
             </motion.div>
 
@@ -53,20 +54,20 @@ export default function Landing() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="flex flex-col sm:flex-row gap-4 justify-center"
             >
-              <Link to={createPageUrl('Login') + '?role=passenger'}>
+              <button onClick={() => base44.auth.redirectToLogin(createPageUrl('RequestRide'))}>
                 <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-6 text-lg rounded-2xl shadow-xl shadow-blue-500/25">
                   <User className="w-5 h-5 mr-2" />
-                  Soy pasajero
+                  Viaja ahora
                   <ChevronRight className="w-5 h-5 ml-2" />
                 </Button>
-              </Link>
-              <Link to={createPageUrl('Login') + '?role=driver'}>
+              </button>
+              <button onClick={() => base44.auth.redirectToLogin(createPageUrl('DriverOnboarding'))}>
                 <Button size="lg" variant="outline" className="w-full sm:w-auto border-2 border-white/20 bg-white/5 text-white hover:bg-white/10 px-8 py-6 text-lg rounded-2xl">
                   <Car className="w-5 h-5 mr-2" />
-                  Soy conductor
+                  Gana dinero
                   <ChevronRight className="w-5 h-5 ml-2" />
                 </Button>
-              </Link>
+              </button>
             </motion.div>
           </div>
         </div>
@@ -77,10 +78,10 @@ export default function Landing() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-              Transporte accesible y confiable
+              ¿Por qué elegirnos?
             </h2>
             <p className="text-slate-600 max-w-2xl mx-auto">
-              Una alternativa económica al transporte tradicional con la seguridad de conductores verificados y tarifas claras.
+              Precio justo. Conductores verificados. Rutas fijas.
             </p>
           </div>
 
@@ -88,20 +89,20 @@ export default function Landing() {
             {[
               {
                 icon: Shield,
-                title: 'Conductores verificados',
-                description: 'Verificación estricta de identidad, licencia y documentos del vehículo.',
+                title: 'Seguridad primero',
+                description: 'Conductores verificados. Documentos revisados. Viaja tranquilo.',
                 color: 'blue'
               },
               {
                 icon: CreditCard,
-                title: 'Tarifas accesibles',
-                description: 'Precios justos y transparentes. Sin cargos ocultos ni sorpresas.',
+                title: 'Precio claro',
+                description: 'Sabes cuánto pagas antes de abordar. Sin sorpresas.',
                 color: 'indigo'
               },
               {
-                icon: Star,
-                title: 'Calificaciones',
-                description: 'Sistema de calificaciones bidireccional para mantener la calidad del servicio.',
+                icon: MapPin,
+                title: 'Rutas diarias',
+                description: 'De EdoMex a CDMX todos los días. Conexiones clave.',
                 color: 'purple'
               }
             ].map((feature, index) => (
@@ -144,10 +145,10 @@ export default function Landing() {
               </div>
               <div className="space-y-6">
                 {[
-                  { step: '1', title: 'Regístrate', desc: 'Verifica tu número telefónico' },
-                  { step: '2', title: 'Solicita viaje', desc: 'Elige tu destino y tarifa' },
-                  { step: '3', title: 'Viaja tranquilo', desc: 'Conductor verificado' },
-                  { step: '4', title: 'Tarifa fija', desc: 'Sin cargos sorpresa' }
+                  { step: '1', title: 'Regístrate rápido', desc: 'Solo tu teléfono' },
+                  { step: '2', title: 'Elige tu ruta', desc: 'Precio claro desde el inicio' },
+                  { step: '3', title: 'Paga y confirma', desc: 'Seguro antes de abordar' },
+                  { step: '4', title: 'Viaja seguro', desc: 'Conductor verificado' }
                 ].map((item, index) => (
                   <div key={item.step} className="flex gap-4">
                     <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
@@ -172,10 +173,10 @@ export default function Landing() {
               </div>
               <div className="space-y-6">
                 {[
-                  { step: '1', title: 'Regístrate', desc: 'Verifica tu número telefónico' },
-                  { step: '2', title: 'Sube documentos', desc: 'INE, licencia y vehículo' },
-                  { step: '3', title: 'Viajes constantes', desc: 'Rutas necesarias en tu zona' },
-                  { step: '4', title: 'Solo 10% comisión', desc: 'Ingresos justos y constantes' }
+                  { step: '1', title: 'Regístrate fácil', desc: 'Solo tu teléfono' },
+                  { step: '2', title: 'Verifica documentos', desc: 'INE, licencia, tarjeta' },
+                  { step: '3', title: 'Acepta viajes', desc: 'Rutas fijas, pasajeros seguros' },
+                  { step: '4', title: 'Gana bien', desc: 'Solo 20% de comisión' }
                 ].map((item, index) => (
                   <div key={item.step} className="flex gap-4">
                     <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
@@ -197,17 +198,17 @@ export default function Landing() {
       <div className="bg-gradient-to-br from-blue-600 to-indigo-600 py-20 px-6">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-            Transporte accesible para todos
+            Comienza hoy mismo
           </h2>
           <p className="text-lg text-white/80 mb-10">
-            Tarifa justa, viajes seguros en las rutas que necesitas. Únete ahora.
+            Viaja económico. Gana bien. Sin complicaciones.
           </p>
-          <Link to={createPageUrl('Login')}>
+          <button onClick={() => base44.auth.redirectToLogin()}>
             <Button size="lg" className="bg-white text-blue-600 hover:bg-slate-100 px-10 py-6 text-lg rounded-2xl shadow-xl">
-              Crear cuenta gratis
+              Registrarse gratis
               <ChevronRight className="w-5 h-5 ml-2" />
             </Button>
-          </Link>
+          </button>
         </div>
       </div>
 
