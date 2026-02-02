@@ -131,7 +131,7 @@ export default function DriverDashboard() {
 
     } catch (error) {
       console.error('Error loading data:', error);
-      base44.auth.redirectToLogin();
+      base44.auth.redirectToLogin(createPageUrl('WelcomeChofer'));
     } finally {
       setLoading(false);
     }

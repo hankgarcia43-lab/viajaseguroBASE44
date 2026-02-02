@@ -61,6 +61,7 @@ export default function SearchRoutes() {
 
     } catch (error) {
       console.error('Error loading data:', error);
+      base44.auth.redirectToLogin(createPageUrl('WelcomePasajero'));
     } finally {
       setLoading(false);
     }
