@@ -142,9 +142,22 @@ export default function DriverEarnings() {
                 <Wallet className="w-5 h-5" />
                 <span className="text-white/80">Saldo disponible</span>
               </div>
-              <Button variant="secondary" size="sm" className="bg-white/20 text-white hover:bg-white/30">
-                Retirar
-              </Button>
+              <a
+                href={`https://wa.me/5215574510969?text=${encodeURIComponent(
+                  `Hola, soy ${driver?.full_name} y deseo solicitar el pago de mi saldo acumulado.\n\n` +
+                  `💰 Saldo disponible: $${driver?.earnings_balance?.toLocaleString() || 0} MXN\n` +
+                  `🆔 ID Conductor: ${driver?.id}\n` +
+                  `📱 Teléfono: ${driver?.phone}\n\n` +
+                  `Por favor, envíenme los detalles para completar el proceso.`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button size="sm" className="bg-white/20 text-white hover:bg-white/30">
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  Solicitar pago
+                </Button>
+              </a>
             </div>
             <p className="text-4xl font-bold">${driver?.earnings_balance?.toLocaleString() || 0}</p>
             <p className="text-white/60 text-sm mt-1">MXN</p>

@@ -84,7 +84,7 @@ export default function Layout({ children, currentPageName }) {
   ];
 
   const driverNavItems = [
-    { name: 'Panel conductor', icon: Car, page: 'DriverDashboard' },
+    { name: 'Viajes activos', icon: Car, page: 'DriverActiveRides' },
     { name: 'Mis rutas', icon: Route, page: 'MyRoutes' },
     { name: 'Historial', icon: Clock, page: 'DriverHistory' },
     { name: 'Ganancias', icon: Settings, page: 'DriverEarnings' },
