@@ -69,6 +69,7 @@ import ReportIncident from './pages/ReportIncident';
 import RequestRide from './pages/RequestRide';
 import RouteDetails from './pages/RouteDetails';
 import SearchRoutes from './pages/SearchRoutes';
+import DriverActiveRides from './pages/DriverActiveRides';
 import __Layout from './Layout.jsx';
 
 
@@ -95,6 +96,7 @@ export const PAGES = {
     "RequestRide": RequestRide,
     "RouteDetails": RouteDetails,
     "SearchRoutes": SearchRoutes,
+    "DriverActiveRides": DriverActiveRides,
 }
 
 export const pagesConfig = {

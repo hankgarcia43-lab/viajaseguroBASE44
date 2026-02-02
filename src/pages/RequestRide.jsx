@@ -5,8 +5,9 @@ import { createPageUrl } from '../utils';
 import MapView from '../components/map/MapView';
 import { 
   MapPin, Navigation, Search, X, Loader2, 
-  Clock, DollarSign, Car, ChevronRight, AlertCircle, MessageCircle, CheckCircle
+  Clock, DollarSign, Car, ChevronRight, AlertCircle, MessageCircle, CheckCircle, QrCode
 } from 'lucide-react';
+import CURPVerification from '../components/verification/CURPVerification';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,7 +26,7 @@ const PRICING = {
 
 export default function RequestRide() {
   const [user, setUser] = useState(null);
-  const [step, setStep] = useState('input'); // input, confirming, confirmed, whatsapp_payment, assigned
+  const [step, setStep] = useState('input'); // input, curp_verification, confirming, confirmed, qr_ready, in_progress, completed
   const [origin, setOrigin] = useState(null);
   const [destination, setDestination] = useState(null);
   const [originAddress, setOriginAddress] = useState('');
@@ -50,14 +51,21 @@ export default function RequestRide() {
       const unsubscribe = base44.entities.Ride.subscribe((event) => {
         if (event.data.id === ride.id) {
           setRide(event.data);
-          if (event.data.status === 'assigned' || event.data.status === 'driver_arriving') {
-            setStep('assigned');
+          
+          // Update step based on status
+          if (event.data.status === 'accepted' && step !== 'qr_ready') {
+            setStep('qr_ready');
+            toast.success('¡Conductor aceptó tu viaje!');
+          } else if (event.data.status === 'in_progress') {
+            setStep('in_progress');
+          } else if (event.data.status === 'completed') {
+            setStep('completed');
           }
         }
       });
       return () => unsubscribe();
     }
-  }, [ride?.id]);
+  }, [ride?.id, step]);
 
   useEffect(() => {
     if (searchTimeout > 0) {
@@ -215,11 +223,17 @@ export default function RequestRide() {
       return;
     }
 
+    // Check if user needs CURP verification
+    if (!user.curp && !user.first_ride_confirmed) {
+      setStep('curp_verification');
+      return;
+    }
+
     setLoading(true);
     setStep('confirming');
     
     try {
-      // Create ride with pending status
+      // Create ride with requested status
       const newRide = await base44.entities.Ride.create({
         passenger_id: user.id,
         passenger_name: user.full_name,
@@ -238,18 +252,8 @@ export default function RequestRide() {
       });
 
       setRide(newRide);
-
-      // Simulate availability check (2 seconds)
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Confirm ride
-      const confirmedRide = await base44.entities.Ride.update(newRide.id, {
-        status: 'confirmed'
-      });
-
-      setRide(confirmedRide);
       setStep('confirmed');
-      toast.success('¡Viaje confirmado!');
+      toast.success('Viaje solicitado. Esperando aceptación del conductor.');
 
     } catch (error) {
       toast.error('Error al solicitar viaje');
@@ -257,6 +261,23 @@ export default function RequestRide() {
       setStep('input');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCURPVerified = async (curp) => {
+    try {
+      await base44.auth.updateMe({ 
+        curp: curp,
+        curp_verified_at: new Date().toISOString(),
+        verification_status: 'curp_verified'
+      });
+      
+      setUser({ ...user, curp: curp, verification_status: 'curp_verified' });
+      
+      // Continue with ride request
+      handleRequestRide();
+    } catch (error) {
+      throw new Error('Error al guardar CURP');
     }
   };
 
@@ -501,6 +522,29 @@ export default function RequestRide() {
             </motion.div>
           )}
 
+          {/* CURP Verification Step */}
+          {step === 'curp_verification' && (
+            <motion.div
+              key="curp"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="p-6"
+            >
+              <CURPVerification 
+                onVerified={handleCURPVerified}
+                userName={user?.full_name}
+              />
+              <Button
+                variant="outline"
+                onClick={() => setStep('input')}
+                className="w-full mt-4"
+              >
+                Cancelar
+              </Button>
+            </motion.div>
+          )}
+
           {/* Confirming Step */}
           {step === 'confirming' && (
             <motion.div
@@ -534,7 +578,7 @@ export default function RequestRide() {
             </motion.div>
           )}
 
-          {/* Confirmed Step */}
+          {/* Confirmed Step - Waiting for driver */}
           {step === 'confirmed' && (
             <motion.div
               key="confirmed"
@@ -543,13 +587,13 @@ export default function RequestRide() {
               exit={{ opacity: 0, y: -20 }}
               className="p-6"
             >
-              <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
-                <CheckCircle className="w-10 h-10 text-green-600" />
+              <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-6">
+                <Clock className="w-10 h-10 text-blue-600 animate-pulse" />
               </div>
               
-              <h2 className="text-2xl font-bold text-slate-900 mb-2 text-center">¡Viaje confirmado!</h2>
+              <h2 className="text-2xl font-bold text-slate-900 mb-2 text-center">Viaje solicitado</h2>
               <p className="text-slate-600 text-center mb-6">
-                Tu viaje ha sido aceptado en la app
+                Esperando que un conductor acepte tu viaje
               </p>
 
               <Card className="mb-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-0">
@@ -564,27 +608,87 @@ export default function RequestRide() {
                       <span className="text-sm font-medium text-slate-900 text-right truncate ml-2">{destAddress}</span>
                     </div>
                     <div className="flex items-center justify-between pt-3 border-t border-blue-200">
-                      <span className="text-slate-700 font-medium">Precio total</span>
+                      <span className="text-slate-700 font-medium">Precio</span>
                       <span className="font-bold text-2xl text-blue-600">${estimate?.fare} MXN</span>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                <p className="text-sm text-blue-900 font-medium mb-1">⏳ En espera</p>
+                <p className="text-xs text-blue-800">
+                  Un conductor revisará tu solicitud pronto. Te notificaremos cuando sea aceptado.
+                </p>
+              </div>
+
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  await base44.entities.Ride.update(ride.id, { 
+                    status: 'cancelled',
+                    cancelled_by: 'passenger'
+                  });
+                  setStep('input');
+                  setRide(null);
+                }}
+                className="w-full h-12 rounded-xl"
+              >
+                Cancelar solicitud
+              </Button>
+            </motion.div>
+          )}
+
+          {/* QR Ready Step - After driver accepts */}
+          {step === 'qr_ready' && ride && (
+            <motion.div
+              key="qr_ready"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="p-6"
+            >
+              <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
+                <CheckCircle className="w-10 h-10 text-green-600" />
+              </div>
+              
+              <h2 className="text-2xl font-bold text-slate-900 mb-2 text-center">¡Viaje aceptado!</h2>
+              <p className="text-slate-600 text-center mb-2">
+                El conductor {ride.driver_name} aceptó tu viaje
+              </p>
+              <p className="text-sm text-slate-500 text-center mb-6">
+                {ride.vehicle_model} • {ride.vehicle_color} • {ride.vehicle_plate}
+              </p>
+
+              <Card className="mb-6 bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-center mb-3">
+                    <QrCode className="w-24 h-24 text-green-600" />
+                  </div>
+                  <p className="text-center text-sm text-green-800 font-medium mb-2">
+                    Código QR generado
+                  </p>
+                  <p className="text-center text-xs text-green-700">
+                    {ride.qr_code || ride.id}
+                  </p>
+                </CardContent>
+              </Card>
+
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
                 <p className="text-sm text-amber-900 font-medium mb-1">💳 Siguiente paso: Pago</p>
                 <p className="text-xs text-amber-800">
-                  Continúa por WhatsApp para recibir los datos de pago y coordinar con el operador.
+                  Para activar tu boleto QR, continúa con el pago por WhatsApp.
                 </p>
               </div>
 
               <a
                 href={`https://wa.me/5215574510969?text=${encodeURIComponent(
-                  `Hola, mi viaje ya fue aceptado en la app y quiero continuar con el proceso de pago.\n\n` +
-                  `📍 Origen: ${originAddress}\n` +
-                  `📍 Destino: ${destAddress}\n` +
-                  `💰 Precio confirmado: $${estimate?.fare} MXN\n` +
-                  `🆔 ID de viaje: ${ride?.id}\n\n` +
+                  `Hola, mi viaje fue aceptado y quiero continuar con el proceso de pago.\n\n` +
+                  `📍 Origen: ${ride.origin_address}\n` +
+                  `📍 Destino: ${ride.dest_address}\n` +
+                  `💰 Precio: $${ride.fare_estimated} MXN\n` +
+                  `🚗 Conductor: ${ride.driver_name}\n` +
+                  `🆔 ID: ${ride.id}\n\n` +
                   `Nombre: ${user?.full_name}\n` +
                   `Teléfono: ${user?.phone || 'No proporcionado'}`
                 )}`}
@@ -594,19 +698,16 @@ export default function RequestRide() {
               >
                 <Button className="w-full h-14 bg-green-600 hover:bg-green-700 rounded-xl text-lg">
                   <MessageCircle className="w-5 h-5 mr-2" />
-                  Continuar por WhatsApp
+                  Pagar por WhatsApp
                 </Button>
               </a>
 
               <Button
                 variant="outline"
-                onClick={() => {
-                  setStep('input');
-                  setRide(null);
-                }}
+                onClick={() => navigate(createPageUrl('PassengerHistory'))}
                 className="w-full mt-3 h-12 rounded-xl"
               >
-                Cancelar viaje
+                Ver detalles del viaje
               </Button>
             </motion.div>
           )}

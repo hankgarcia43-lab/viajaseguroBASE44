@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { MessageCircle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { 
   DollarSign, TrendingUp, Calendar, Clock, 
