@@ -75,6 +75,7 @@ import SearchRoutes from './pages/SearchRoutes';
 import PasajeroVerificacion from './pages/PasajeroVerificacion';
 import PassengerTicket from './pages/PassengerTicket';
 import QuickRide from './pages/QuickRide';
+import DriverActiveRides from './pages/DriverActiveRides';
 import DriverQuickRequests from './pages/DriverQuickRequests';
 import Soporte from './pages/Soporte';
 import WelcomePasajero from './pages/WelcomePasajero';
