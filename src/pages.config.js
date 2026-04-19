@@ -72,6 +72,7 @@ import ReportIncident from './pages/ReportIncident';
 import RequestRide from './pages/RequestRide';
 import RouteDetails from './pages/RouteDetails';
 import SearchRoutes from './pages/SearchRoutes';
+import PasajeroVerificacion from './pages/PasajeroVerificacion';
 import Soporte from './pages/Soporte';
 import WelcomePasajero from './pages/WelcomePasajero';
 import WelcomeChofer from './pages/WelcomeChofer';
@@ -104,6 +105,7 @@ export const PAGES = {
     "RequestRide": RequestRide,
     "RouteDetails": RouteDetails,
     "SearchRoutes": SearchRoutes,
+    "PasajeroVerificacion": PasajeroVerificacion,
     "Soporte": Soporte,
     "WelcomePasajero": WelcomePasajero,
     "WelcomeChofer": WelcomeChofer,

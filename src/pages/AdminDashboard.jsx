@@ -338,7 +338,7 @@ export default function AdminDashboard() {
             <Card className="hover:shadow-md transition-shadow cursor-pointer">
               <CardContent className="p-4 text-center">
                 <Shield className="w-8 h-8 text-indigo-600 mx-auto mb-2" />
-                <p className="font-medium text-sm">Verificación KYC</p>
+                <p className="font-medium text-sm">Verificación</p>
               </CardContent>
             </Card>
           </Link>

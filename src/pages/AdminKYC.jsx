@@ -1,496 +1,449 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { 
-  Shield, User, Car, FileText, CheckCircle, XCircle, 
-  Clock, AlertCircle, Eye, ChevronDown, Loader2,
-  Image, Download, ExternalLink
+  Shield, User, Car, FileText, CheckCircle, XCircle, Clock,
+  AlertTriangle, Eye, Loader2, RefreshCw, ChevronDown, ChevronUp,
+  Image as ImageIcon
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 
+// ─── Status helpers ───────────────────────────────────────────────────────────
+const STATUS_CFG = {
+  pending:          { label: 'Pendiente',           color: 'bg-yellow-100 text-yellow-700' },
+  documents_uploaded:{ label: 'Docs subidos',       color: 'bg-blue-100 text-blue-700' },
+  automated_check:  { label: 'Verificando',         color: 'bg-yellow-100 text-yellow-700' },
+  manual_review:    { label: 'Rev. manual',         color: 'bg-orange-100 text-orange-700' },
+  approved:         { label: 'Aprobado',            color: 'bg-green-100 text-green-700' },
+  rejected:         { label: 'Rechazado',           color: 'bg-red-100 text-red-700' },
+  needs_correction: { label: 'Requiere corrección', color: 'bg-orange-100 text-orange-700' },
+};
+
+const StatusBadge = ({ status }) => {
+  const cfg = STATUS_CFG[status] || STATUS_CFG.pending;
+  return <Badge className={cfg.color}>{cfg.label}</Badge>;
+};
+
+const DocThumb = ({ url, label }) => (
+  <div className="space-y-1">
+    <p className="text-[11px] text-slate-500 font-medium">{label}</p>
+    {url ? (
+      <a href={url} target="_blank" rel="noopener noreferrer">
+        <div className="aspect-video bg-slate-100 rounded-lg overflow-hidden relative group cursor-pointer">
+          <img src={url} alt={label} className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-lg">
+            <Eye className="w-5 h-5 text-white" />
+          </div>
+        </div>
+      </a>
+    ) : (
+      <div className="aspect-video bg-slate-100 rounded-lg flex items-center justify-center border border-dashed border-slate-300">
+        <ImageIcon className="w-5 h-5 text-slate-300" />
+      </div>
+    )}
+  </div>
+);
+
+// ─── Driver Card ──────────────────────────────────────────────────────────────
+function DriverCard({ driver, tab, onAction }) {
+  const [expanded, setExpanded] = useState(false);
+  const isPending = ['pending','documents_uploaded','automated_check','manual_review'].includes(driver.kyc_status);
+  const isVehiclePending = ['pending','documents_uploaded','needs_correction'].includes(driver.vehicle_kyc_status || 'pending');
+
+  const status = tab === 'conductores' ? driver.kyc_status : (driver.vehicle_kyc_status || 'pending');
+  const notes  = tab === 'conductores' ? driver.kyc_notes : driver.vehicle_kyc_notes;
+  const canAct = tab === 'conductores' ? isPending : isVehiclePending;
+
+  return (
+    <Card className="overflow-hidden">
+      <CardContent className="p-0">
+        {/* Header row */}
+        <div className="p-4 bg-slate-50 border-b flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0">
+              {driver.profile_photo
+                ? <img src={driver.profile_photo} alt="" className="w-full h-full rounded-full object-cover" />
+                : <User className="w-5 h-5 text-slate-400" />}
+            </div>
+            <div className="min-w-0">
+              <p className="font-semibold text-slate-900 truncate">{driver.full_name}</p>
+              <p className="text-sm text-slate-500">{driver.phone}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <StatusBadge status={status} />
+            <button onClick={() => setExpanded(!expanded)} className="text-slate-400 hover:text-slate-600 p-1">
+              {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+
+        {expanded && (
+          <div className="p-4">
+            {/* Documents grid */}
+            {tab === 'conductores' && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                <DocThumb url={driver.ine_front}    label="INE Frente" />
+                <DocThumb url={driver.ine_back}     label="INE Reverso" />
+                <DocThumb url={driver.selfie}       label="Selfie" />
+                <DocThumb url={driver.license_front} label="Licencia" />
+              </div>
+            )}
+            {tab === 'vehiculos' && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                <DocThumb url={driver.circulation_card} label="T. Circulación" />
+                <DocThumb url={driver.insurance_photo}  label="Póliza/Seguro" />
+                <DocThumb url={driver.vehicle_photo}    label="Foto Vehículo" />
+                {driver.requires_owner_letter && <DocThumb url={driver.owner_letter} label="Carta Responsiva" />}
+              </div>
+            )}
+
+            {/* Extracted data */}
+            <div className="bg-slate-50 rounded-xl p-3 mb-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+              {tab === 'conductores' && <>
+                <div><p className="text-slate-400 text-xs">Nombre INE</p><p className="font-medium">{driver.ine_name || '—'}</p></div>
+                <div><p className="text-slate-400 text-xs">CURP</p><p className="font-medium text-xs">{driver.ine_curp || '—'}</p></div>
+                <div><p className="text-slate-400 text-xs">No. INE</p><p className="font-medium text-xs">{driver.ine_number || '—'}</p></div>
+                <div><p className="text-slate-400 text-xs">Confianza OCR</p><p className={`font-medium ${(driver.ocr_confidence||0) >= 85 ? 'text-green-600' : 'text-orange-600'}`}>{driver.ocr_confidence ? `${driver.ocr_confidence}%` : '—'}</p></div>
+              </>}
+              {tab === 'vehiculos' && <>
+                <div><p className="text-slate-400 text-xs">Placas</p><p className="font-medium">{driver.vehicle_plate || '—'}</p></div>
+                <div><p className="text-slate-400 text-xs">Vehículo</p><p className="font-medium">{driver.vehicle_model || '—'}</p></div>
+                <div><p className="text-slate-400 text-xs">Propietario T.C.</p><p className="font-medium text-xs">{driver.circulation_owner_name || '—'}</p></div>
+                <div><p className="text-slate-400 text-xs">Match propietario</p><p className={`font-medium ${driver.owner_match ? 'text-green-600' : 'text-red-600'}`}>{driver.owner_match ? 'Sí' : 'No'}</p></div>
+              </>}
+            </div>
+
+            {notes && (
+              <div className="mb-4 p-3 rounded-xl bg-amber-50 border border-amber-200">
+                <p className="text-xs font-semibold text-amber-800 mb-1">Notas admin</p>
+                <p className="text-sm text-amber-700">{notes}</p>
+              </div>
+            )}
+
+            {/* Actions */}
+            {canAct && (
+              <div className="flex gap-2 justify-end flex-wrap">
+                <Button variant="outline" size="sm" onClick={() => onAction(driver, tab, 'correction')} className="text-orange-600 hover:bg-orange-50 border-orange-200">
+                  <AlertTriangle className="w-3.5 h-3.5 mr-1" />
+                  Solicitar corrección
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => onAction(driver, tab, 'reject')} className="text-red-600 hover:bg-red-50 border-red-200">
+                  <XCircle className="w-3.5 h-3.5 mr-1" />
+                  Rechazar
+                </Button>
+                <Button size="sm" onClick={() => onAction(driver, tab, 'approve')} className="bg-green-600 hover:bg-green-700">
+                  <CheckCircle className="w-3.5 h-3.5 mr-1" />
+                  Aprobar
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Passenger Card ───────────────────────────────────────────────────────────
+function PassengerCard({ subs, onAction }) {
+  const [expanded, setExpanded] = useState(false);
+  const grouped = {};
+  subs.forEach(s => { if (!grouped[s.doc_type] || new Date(s.created_date) > new Date(grouped[s.doc_type].created_date)) grouped[s.doc_type] = s; });
+  const latest = Object.values(grouped);
+  const hasPending = latest.some(s => s.status === 'pending');
+  const user_name = subs[0]?.user_name || 'Pasajero';
+
+  return (
+    <Card className="overflow-hidden">
+      <CardContent className="p-0">
+        <div className="p-4 bg-slate-50 border-b flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+              <User className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="font-semibold text-slate-900">{user_name}</p>
+              <p className="text-xs text-slate-500">{latest.length} documento(s)</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {hasPending && <Badge className="bg-yellow-100 text-yellow-700">Pendiente</Badge>}
+            <button onClick={() => setExpanded(!expanded)} className="text-slate-400 p-1">
+              {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+
+        {expanded && (
+          <div className="p-4">
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              {latest.map(sub => (
+                <div key={sub.id}>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs text-slate-500">{sub.doc_label || sub.doc_type}</p>
+                    <StatusBadge status={sub.status} />
+                  </div>
+                  <DocThumb url={sub.file_url} label="" />
+                  {sub.review_notes && <p className="text-xs text-orange-700 mt-1 bg-orange-50 rounded p-1">{sub.review_notes}</p>}
+                  {sub.status === 'pending' && (
+                    <div className="flex gap-1 mt-2">
+                      <Button size="sm" variant="outline" className="text-red-600 border-red-200 text-xs h-7 px-2" onClick={() => onAction(sub, 'reject')}>
+                        Rechazar
+                      </Button>
+                      <Button size="sm" className="bg-green-600 hover:bg-green-700 text-xs h-7 px-2" onClick={() => onAction(sub, 'approve')}>
+                        Aprobar
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function AdminKYC() {
-  const [drivers, setDrivers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedDriver, setSelectedDriver] = useState(null);
-  const [showDialog, setShowDialog] = useState(false);
-  const [action, setAction] = useState('');
-  const [notes, setNotes] = useState('');
+  const [tab, setTab]             = useState('conductores');
+  const [filter, setFilter]       = useState('pending');
+  const [drivers, setDrivers]     = useState([]);
+  const [passengerSubs, setPassengerSubs] = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [dialog, setDialog]       = useState({ open: false, target: null, tab: '', action: '' });
+  const [notes, setNotes]         = useState('');
   const [processing, setProcessing] = useState(false);
-  const [filter, setFilter] = useState('pending');
 
-  useEffect(() => {
-    loadDrivers();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
-  const loadDrivers = async () => {
+  const loadData = async () => {
+    setLoading(true);
     try {
-      const allDrivers = await base44.entities.Driver.list('-created_date', 100);
-      setDrivers(allDrivers);
-    } catch (error) {
-      console.error('Error loading drivers:', error);
-    } finally {
-      setLoading(false);
-    }
+      const [drvs, subs] = await Promise.all([
+        base44.entities.Driver.list('-created_date', 100),
+        base44.entities.DocumentSubmission.filter({ user_role: 'passenger' }, '-created_date', 200),
+      ]);
+      setDrivers(drvs);
+      setPassengerSubs(subs);
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
   };
 
+  // Filter drivers
+  const isPendingStatus = (s) => ['pending','documents_uploaded','automated_check','manual_review'].includes(s);
   const filteredDrivers = drivers.filter(d => {
-    if (filter === 'pending') {
-      return ['pending', 'documents_uploaded', 'automated_check', 'manual_review'].includes(d.kyc_status);
-    }
-    if (filter === 'approved') return d.kyc_status === 'approved';
-    if (filter === 'rejected') return d.kyc_status === 'rejected';
+    const s = tab === 'conductores' ? d.kyc_status : (d.vehicle_kyc_status || 'pending');
+    if (filter === 'pending') return isPendingStatus(s);
+    if (filter === 'approved') return s === 'approved';
+    if (filter === 'rejected') return s === 'rejected' || s === 'needs_correction';
     return true;
   });
 
-  const handleAction = async () => {
-    if (!selectedDriver) return;
+  // Group passenger subs by user
+  const passengerGroups = Object.values(
+    passengerSubs.reduce((acc, s) => {
+      if (!acc[s.user_id]) acc[s.user_id] = [];
+      acc[s.user_id].push(s);
+      return acc;
+    }, {})
+  ).filter(group => {
+    if (filter === 'pending') return group.some(s => s.status === 'pending');
+    if (filter === 'approved') return group.every(s => s.status === 'approved');
+    if (filter === 'rejected') return group.some(s => s.status === 'rejected' || s.status === 'needs_correction');
+    return true;
+  });
 
+  const pendingCount = {
+    conductores: drivers.filter(d => isPendingStatus(d.kyc_status)).length,
+    vehiculos:   drivers.filter(d => isPendingStatus(d.vehicle_kyc_status || 'pending')).length,
+    pasajeros:   passengerSubs.filter(s => s.status === 'pending').length,
+  };
+
+  const openDialog = (target, tab, action) => {
+    setDialog({ open: true, target, tab, action });
+    setNotes('');
+  };
+
+  const handleAction = async () => {
+    const { target, tab: actionTab, action } = dialog;
+    if (action !== 'approve' && !notes.trim()) return toast.error('El motivo es obligatorio');
     setProcessing(true);
     try {
-      const user = await base44.auth.me();
-      let updateData = {};
+      const admin = await base44.auth.me();
 
-      if (action === 'approve') {
-        updateData = {
-          kyc_status: 'approved',
-          kyc_notes: notes
-        };
-        toast.success('Conductor aprobado');
-      } else if (action === 'reject') {
-        updateData = {
-          kyc_status: 'rejected',
-          kyc_rejection_reason: notes,
-          kyc_notes: notes
-        };
-        toast.success('Conductor rechazado');
-      } else if (action === 'request_info') {
-        updateData = {
-          kyc_status: 'manual_review',
-          kyc_notes: notes
-        };
-        toast.success('Información solicitada');
+      if (actionTab === 'conductores' || actionTab === 'vehiculos') {
+        // Driver action
+        const driver = target;
+        const isIdentity = actionTab === 'conductores';
+        let updateData = {};
+        if (action === 'approve') {
+          updateData = isIdentity
+            ? { kyc_status: 'approved', kyc_notes: notes || '' }
+            : { vehicle_kyc_status: 'approved', vehicle_kyc_notes: notes || '' };
+        } else if (action === 'reject') {
+          updateData = isIdentity
+            ? { kyc_status: 'rejected', kyc_rejection_reason: notes, kyc_notes: notes }
+            : { vehicle_kyc_status: 'rejected', vehicle_kyc_notes: notes };
+        } else if (action === 'correction') {
+          updateData = isIdentity
+            ? { kyc_status: 'manual_review', kyc_notes: notes }
+            : { vehicle_kyc_status: 'needs_correction', vehicle_kyc_notes: notes };
+        }
+        await base44.entities.Driver.update(driver.id, updateData);
+
+        // Audit log
+        await base44.entities.AuditLog.create({
+          user_id: admin.id, user_email: admin.email,
+          action: action === 'approve' ? 'kyc_approve' : action === 'reject' ? 'kyc_reject' : 'kyc_request_info',
+          entity_type: 'Driver', entity_id: driver.id,
+          details: JSON.stringify({ notes, tab: actionTab, previous_status: isIdentity ? driver.kyc_status : driver.vehicle_kyc_status })
+        });
+
+        // Notify driver
+        await base44.entities.Notification.create({
+          user_id: driver.user_id, type: 'kyc_update',
+          title: action === 'approve' ? '✅ Documentos aprobados' : action === 'reject' ? '❌ Documentos rechazados' : '⚠️ Corrección solicitada',
+          message: action === 'approve'
+            ? `Tu ${isIdentity ? 'identidad' : 'vehículo'} ha sido verificado.`
+            : `Motivo: ${notes}`,
+        });
+
+        toast.success(action === 'approve' ? 'Aprobado correctamente' : action === 'reject' ? 'Rechazado' : 'Corrección solicitada');
+      } else {
+        // Passenger doc action
+        const sub = target;
+        const newStatus = action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'needs_correction';
+        await base44.entities.DocumentSubmission.update(sub.id, {
+          status: newStatus, review_notes: notes, reviewed_by: admin.email, reviewed_at: new Date().toISOString()
+        });
+        toast.success(action === 'approve' ? 'Documento aprobado' : 'Documento rechazado');
       }
 
-      await base44.entities.Driver.update(selectedDriver.id, updateData);
-
-      // Create audit log
-      await base44.entities.AuditLog.create({
-        user_id: user.id,
-        user_email: user.email,
-        action: action === 'approve' ? 'kyc_approve' : action === 'reject' ? 'kyc_reject' : 'kyc_request_info',
-        entity_type: 'Driver',
-        entity_id: selectedDriver.id,
-        details: JSON.stringify({ notes, previous_status: selectedDriver.kyc_status })
-      });
-
-      // Reload drivers
-      await loadDrivers();
-      setShowDialog(false);
-      setSelectedDriver(null);
-      setNotes('');
-
-    } catch (error) {
+      await loadData();
+      setDialog({ open: false, target: null, tab: '', action: '' });
+    } catch (e) {
       toast.error('Error al procesar');
     } finally {
       setProcessing(false);
     }
   };
 
-  const openActionDialog = (driver, actionType) => {
-    setSelectedDriver(driver);
-    setAction(actionType);
-    setNotes('');
-    setShowDialog(true);
-  };
-
-  const getStatusBadge = (status) => {
-    const statuses = {
-      pending: { color: 'bg-slate-100 text-slate-700', text: 'Pendiente' },
-      documents_uploaded: { color: 'bg-blue-100 text-blue-700', text: 'Docs subidos' },
-      automated_check: { color: 'bg-yellow-100 text-yellow-700', text: 'Verificando' },
-      manual_review: { color: 'bg-orange-100 text-orange-700', text: 'Rev. manual' },
-      approved: { color: 'bg-green-100 text-green-700', text: 'Aprobado' },
-      rejected: { color: 'bg-red-100 text-red-700', text: 'Rechazado' }
-    };
-    const s = statuses[status] || statuses.pending;
-    return <Badge className={s.color}>{s.text}</Badge>;
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-6">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-5xl mx-auto">
+        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Verificación KYC</h1>
-            <p className="text-slate-500">Gestión de documentos de conductores</p>
+            <h1 className="text-2xl font-bold text-slate-900">Verificación de documentos</h1>
+            <p className="text-slate-500">Aprueba o rechaza identidades, conductores y vehículos</p>
           </div>
-          <Badge className="bg-yellow-100 text-yellow-700 py-1 px-3">
-            {filteredDrivers.filter(d => ['pending', 'documents_uploaded', 'automated_check', 'manual_review'].includes(d.kyc_status)).length} pendientes
-          </Badge>
+          <Button variant="outline" size="sm" onClick={loadData}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Actualizar
+          </Button>
         </div>
 
-        {/* Tabs */}
-        <Tabs value={filter} onValueChange={setFilter} className="mb-6">
-          <TabsList className="bg-white">
-            <TabsTrigger value="pending">
-              Pendientes ({drivers.filter(d => ['pending', 'documents_uploaded', 'automated_check', 'manual_review'].includes(d.kyc_status)).length})
+        {/* Tabs por tipo */}
+        <Tabs value={tab} onValueChange={setTab} className="mb-5">
+          <TabsList className="bg-white w-full">
+            <TabsTrigger value="conductores" className="flex-1">
+              Conductores {pendingCount.conductores > 0 && <Badge className="ml-2 bg-yellow-100 text-yellow-700">{pendingCount.conductores}</Badge>}
             </TabsTrigger>
-            <TabsTrigger value="approved">
-              Aprobados ({drivers.filter(d => d.kyc_status === 'approved').length})
+            <TabsTrigger value="vehiculos" className="flex-1">
+              Vehículos {pendingCount.vehiculos > 0 && <Badge className="ml-2 bg-yellow-100 text-yellow-700">{pendingCount.vehiculos}</Badge>}
             </TabsTrigger>
-            <TabsTrigger value="rejected">
-              Rechazados ({drivers.filter(d => d.kyc_status === 'rejected').length})
+            <TabsTrigger value="pasajeros" className="flex-1">
+              Pasajeros {pendingCount.pasajeros > 0 && <Badge className="ml-2 bg-yellow-100 text-yellow-700">{pendingCount.pasajeros}</Badge>}
             </TabsTrigger>
-            <TabsTrigger value="all">Todos</TabsTrigger>
           </TabsList>
         </Tabs>
 
-        {/* Drivers List */}
-        {filteredDrivers.length === 0 ? (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <Shield className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-              <h3 className="font-semibold text-slate-900 mb-2">Sin conductores</h3>
-              <p className="text-slate-500">No hay conductores en esta categoría</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            {filteredDrivers.map((driver) => (
-              <Card key={driver.id} className="overflow-hidden">
-                <CardContent className="p-0">
-                  <div className="p-4 border-b bg-slate-50 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center">
-                        <User className="w-6 h-6 text-slate-500" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-slate-900">{driver.full_name}</h3>
-                        <p className="text-sm text-slate-500">{driver.phone}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {getStatusBadge(driver.kyc_status)}
-                      {driver.ocr_confidence && (
-                        <Badge variant="outline">
-                          OCR: {driver.ocr_confidence}%
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
+        {/* Filter */}
+        <div className="flex gap-2 mb-5 flex-wrap">
+          {['pending','approved','rejected','all'].map(f => (
+            <Button key={f} size="sm" variant={filter === f ? 'default' : 'outline'}
+              className={filter === f ? 'bg-blue-600 hover:bg-blue-700' : ''}
+              onClick={() => setFilter(f)}>
+              {{ pending: 'Pendientes', approved: 'Aprobados', rejected: 'Rechazados', all: 'Todos' }[f]}
+            </Button>
+          ))}
+        </div>
 
-                  <div className="p-4">
-                    {/* Documents Grid */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                      {/* INE */}
-                      <div className="space-y-2">
-                        <Label className="text-xs text-slate-500">INE Frente</Label>
-                        {driver.ine_front ? (
-                          <a href={driver.ine_front} target="_blank" rel="noopener noreferrer">
-                            <div className="aspect-video bg-slate-100 rounded-lg overflow-hidden relative group">
-                              <img src={driver.ine_front} alt="" className="w-full h-full object-cover" />
-                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                <Eye className="w-6 h-6 text-white" />
-                              </div>
-                            </div>
-                          </a>
-                        ) : (
-                          <div className="aspect-video bg-slate-100 rounded-lg flex items-center justify-center">
-                            <Image className="w-6 h-6 text-slate-300" />
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label className="text-xs text-slate-500">INE Reverso</Label>
-                        {driver.ine_back ? (
-                          <a href={driver.ine_back} target="_blank" rel="noopener noreferrer">
-                            <div className="aspect-video bg-slate-100 rounded-lg overflow-hidden relative group">
-                              <img src={driver.ine_back} alt="" className="w-full h-full object-cover" />
-                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                <Eye className="w-6 h-6 text-white" />
-                              </div>
-                            </div>
-                          </a>
-                        ) : (
-                          <div className="aspect-video bg-slate-100 rounded-lg flex items-center justify-center">
-                            <Image className="w-6 h-6 text-slate-300" />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Selfie */}
-                      <div className="space-y-2">
-                        <Label className="text-xs text-slate-500">Selfie</Label>
-                        {driver.selfie ? (
-                          <a href={driver.selfie} target="_blank" rel="noopener noreferrer">
-                            <div className="aspect-video bg-slate-100 rounded-lg overflow-hidden relative group">
-                              <img src={driver.selfie} alt="" className="w-full h-full object-cover" />
-                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                <Eye className="w-6 h-6 text-white" />
-                              </div>
-                            </div>
-                          </a>
-                        ) : (
-                          <div className="aspect-video bg-slate-100 rounded-lg flex items-center justify-center">
-                            <Image className="w-6 h-6 text-slate-300" />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* License */}
-                      <div className="space-y-2">
-                        <Label className="text-xs text-slate-500">Licencia</Label>
-                        {driver.license_front ? (
-                          <a href={driver.license_front} target="_blank" rel="noopener noreferrer">
-                            <div className="aspect-video bg-slate-100 rounded-lg overflow-hidden relative group">
-                              <img src={driver.license_front} alt="" className="w-full h-full object-cover" />
-                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                <Eye className="w-6 h-6 text-white" />
-                              </div>
-                            </div>
-                          </a>
-                        ) : (
-                          <div className="aspect-video bg-slate-100 rounded-lg flex items-center justify-center">
-                            <Image className="w-6 h-6 text-slate-300" />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Additional docs */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                      <div className="space-y-2">
-                        <Label className="text-xs text-slate-500">Tarjeta Circulación</Label>
-                        {driver.circulation_card ? (
-                          <a href={driver.circulation_card} target="_blank" rel="noopener noreferrer">
-                            <div className="aspect-video bg-slate-100 rounded-lg overflow-hidden relative group">
-                              <img src={driver.circulation_card} alt="" className="w-full h-full object-cover" />
-                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                <Eye className="w-6 h-6 text-white" />
-                              </div>
-                            </div>
-                          </a>
-                        ) : (
-                          <div className="aspect-video bg-slate-100 rounded-lg flex items-center justify-center">
-                            <Image className="w-6 h-6 text-slate-300" />
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label className="text-xs text-slate-500">Foto Vehículo</Label>
-                        {driver.vehicle_photo ? (
-                          <a href={driver.vehicle_photo} target="_blank" rel="noopener noreferrer">
-                            <div className="aspect-video bg-slate-100 rounded-lg overflow-hidden relative group">
-                              <img src={driver.vehicle_photo} alt="" className="w-full h-full object-cover" />
-                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                <Eye className="w-6 h-6 text-white" />
-                              </div>
-                            </div>
-                          </a>
-                        ) : (
-                          <div className="aspect-video bg-slate-100 rounded-lg flex items-center justify-center">
-                            <Image className="w-6 h-6 text-slate-300" />
-                          </div>
-                        )}
-                      </div>
-
-                      {driver.requires_owner_letter && (
-                        <>
-                          <div className="space-y-2">
-                            <Label className="text-xs text-slate-500">Carta Responsiva</Label>
-                            {driver.owner_letter ? (
-                              <a href={driver.owner_letter} target="_blank" rel="noopener noreferrer">
-                                <div className="aspect-video bg-slate-100 rounded-lg overflow-hidden relative group">
-                                  <img src={driver.owner_letter} alt="" className="w-full h-full object-cover" />
-                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                    <Eye className="w-6 h-6 text-white" />
-                                  </div>
-                                </div>
-                              </a>
-                            ) : (
-                              <div className="aspect-video bg-red-50 rounded-lg flex items-center justify-center border border-red-200">
-                                <AlertCircle className="w-6 h-6 text-red-400" />
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label className="text-xs text-slate-500">INE Propietario</Label>
-                            {driver.owner_ine ? (
-                              <a href={driver.owner_ine} target="_blank" rel="noopener noreferrer">
-                                <div className="aspect-video bg-slate-100 rounded-lg overflow-hidden relative group">
-                                  <img src={driver.owner_ine} alt="" className="w-full h-full object-cover" />
-                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                    <Eye className="w-6 h-6 text-white" />
-                                  </div>
-                                </div>
-                              </a>
-                            ) : (
-                              <div className="aspect-video bg-red-50 rounded-lg flex items-center justify-center border border-red-200">
-                                <AlertCircle className="w-6 h-6 text-red-400" />
-                              </div>
-                            )}
-                          </div>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Extracted Data */}
-                    <div className="bg-slate-50 rounded-lg p-4 mb-4">
-                      <h4 className="font-medium text-slate-700 mb-3">Datos extraídos</h4>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        <div>
-                          <p className="text-slate-500">Nombre INE</p>
-                          <p className="font-medium">{driver.ine_name || '—'}</p>
-                        </div>
-                        <div>
-                          <p className="text-slate-500">CURP</p>
-                          <p className="font-medium">{driver.ine_curp || '—'}</p>
-                        </div>
-                        <div>
-                          <p className="text-slate-500">No. INE</p>
-                          <p className="font-medium">{driver.ine_number || '—'}</p>
-                        </div>
-                        <div>
-                          <p className="text-slate-500">Propietario T.C.</p>
-                          <p className="font-medium">{driver.circulation_owner_name || '—'}</p>
-                        </div>
-                        <div>
-                          <p className="text-slate-500">Placas</p>
-                          <p className="font-medium">{driver.vehicle_plate || '—'}</p>
-                        </div>
-                        <div>
-                          <p className="text-slate-500">Vehículo</p>
-                          <p className="font-medium">{driver.vehicle_model || '—'}</p>
-                        </div>
-                        <div>
-                          <p className="text-slate-500">Match propietario</p>
-                          <p className={`font-medium ${driver.owner_match ? 'text-green-600' : 'text-red-600'}`}>
-                            {driver.owner_match ? 'Sí' : 'No'}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-slate-500">Carta req.</p>
-                          <p className={`font-medium ${driver.requires_owner_letter ? 'text-amber-600' : 'text-slate-600'}`}>
-                            {driver.requires_owner_letter ? 'Sí' : 'No'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Actions */}
-                    {['pending', 'documents_uploaded', 'automated_check', 'manual_review'].includes(driver.kyc_status) && (
-                      <div className="flex gap-3 justify-end">
-                        <Button
-                          variant="outline"
-                          onClick={() => openActionDialog(driver, 'request_info')}
-                        >
-                          <AlertCircle className="w-4 h-4 mr-2" />
-                          Solicitar info
-                        </Button>
-                        <Button
-                          variant="outline"
-                          className="text-red-600 hover:bg-red-50"
-                          onClick={() => openActionDialog(driver, 'reject')}
-                        >
-                          <XCircle className="w-4 h-4 mr-2" />
-                          Rechazar
-                        </Button>
-                        <Button
-                          className="bg-green-600 hover:bg-green-700"
-                          onClick={() => openActionDialog(driver, 'approve')}
-                        >
-                          <CheckCircle className="w-4 h-4 mr-2" />
-                          Aprobar
-                        </Button>
-                      </div>
-                    )}
-
-                    {driver.kyc_notes && (
-                      <div className="mt-4 p-3 bg-slate-100 rounded-lg">
-                        <p className="text-sm text-slate-600">
-                          <strong>Notas:</strong> {driver.kyc_notes}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+        {/* Lists */}
+        {(tab === 'conductores' || tab === 'vehiculos') && (
+          filteredDrivers.length === 0
+            ? <Card><CardContent className="p-14 text-center"><Shield className="w-12 h-12 text-slate-200 mx-auto mb-3" /><p className="text-slate-500">Sin registros en esta categoría</p></CardContent></Card>
+            : <div className="space-y-3">
+                {filteredDrivers.map(d => (
+                  <DriverCard key={d.id} driver={d} tab={tab} onAction={(drv, t, action) => openDialog(drv, t, action)} />
+                ))}
+              </div>
         )}
 
-        {/* Action Dialog */}
-        <Dialog open={showDialog} onOpenChange={setShowDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {action === 'approve' && 'Aprobar conductor'}
-                {action === 'reject' && 'Rechazar conductor'}
-                {action === 'request_info' && 'Solicitar información'}
-              </DialogTitle>
-              <DialogDescription>
-                {action === 'approve' && 'El conductor podrá comenzar a recibir viajes.'}
-                {action === 'reject' && 'El conductor no podrá operar en la plataforma.'}
-                {action === 'request_info' && 'Se notificará al conductor que debe proporcionar información adicional.'}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="py-4">
-              <Label>Notas / Razón</Label>
-              <Textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder={
-                  action === 'approve' ? 'Notas adicionales (opcional)' :
-                  action === 'reject' ? 'Razón del rechazo (obligatorio)' :
-                  'Qué información se necesita'
-                }
-                className="mt-2"
-              />
-            </div>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowDialog(false)}>
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleAction}
-                disabled={processing || (action !== 'approve' && !notes.trim())}
-                className={
-                  action === 'approve' ? 'bg-green-600 hover:bg-green-700' :
-                  action === 'reject' ? 'bg-red-600 hover:bg-red-700' :
-                  ''
-                }
-              >
-                {processing ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  'Confirmar'
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {tab === 'pasajeros' && (
+          passengerGroups.length === 0
+            ? <Card><CardContent className="p-14 text-center"><User className="w-12 h-12 text-slate-200 mx-auto mb-3" /><p className="text-slate-500">Sin documentos de pasajeros</p></CardContent></Card>
+            : <div className="space-y-3">
+                {passengerGroups.map(group => (
+                  <PassengerCard key={group[0].user_id} subs={group}
+                    onAction={(sub, action) => openDialog(sub, 'pasajeros', action)} />
+                ))}
+              </div>
+        )}
       </div>
+
+      {/* Action Dialog */}
+      <Dialog open={dialog.open} onOpenChange={(v) => !v && setDialog({ ...dialog, open: false })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {{ approve: 'Aprobar documentos', reject: 'Rechazar documentos', correction: 'Solicitar corrección' }[dialog.action]}
+            </DialogTitle>
+            <DialogDescription>
+              {{ approve: 'El usuario será notificado de la aprobación.', reject: 'Indica el motivo del rechazo. El usuario podrá volver a subir.', correction: 'Indica qué debe corregir el usuario.' }[dialog.action]}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-3">
+            <Label className="mb-1 block">
+              {dialog.action === 'approve' ? 'Notas (opcional)' : 'Motivo *'}
+            </Label>
+            <Textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder={dialog.action === 'approve' ? 'Observaciones adicionales...' : 'Describe el motivo detalladamente...'}
+              className="min-h-[100px]"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialog({ ...dialog, open: false })}>Cancelar</Button>
+            <Button
+              onClick={handleAction}
+              disabled={processing || (dialog.action !== 'approve' && !notes.trim())}
+              className={dialog.action === 'approve' ? 'bg-green-600 hover:bg-green-700' : dialog.action === 'reject' ? 'bg-red-600 hover:bg-red-700' : 'bg-orange-500 hover:bg-orange-600'}
+            >
+              {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirmar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

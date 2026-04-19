@@ -1,0 +1,195 @@
+{
+  "name": "Driver",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID del usuario asociado"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Tel\u00e9fono del conductor"
+    },
+    "full_name": {
+      "type": "string",
+      "description": "Nombre completo"
+    },
+    "profile_photo": {
+      "type": "string",
+      "description": "URL foto de perfil"
+    },
+    "vehicle_plate": {
+      "type": "string",
+      "description": "Placas del veh\u00edculo"
+    },
+    "vehicle_model": {
+      "type": "string",
+      "description": "Modelo del veh\u00edculo"
+    },
+    "vehicle_color": {
+      "type": "string",
+      "description": "Color del veh\u00edculo"
+    },
+    "vehicle_year": {
+      "type": "string",
+      "description": "A\u00f1o del veh\u00edculo"
+    },
+    "vehicle_photo": {
+      "type": "string",
+      "description": "URL foto del veh\u00edculo"
+    },
+    "ine_front": {
+      "type": "string",
+      "description": "URL INE anverso"
+    },
+    "ine_back": {
+      "type": "string",
+      "description": "URL INE reverso"
+    },
+    "ine_number": {
+      "type": "string",
+      "description": "N\u00famero de INE extra\u00eddo por OCR"
+    },
+    "ine_curp": {
+      "type": "string",
+      "description": "CURP extra\u00eddo del INE"
+    },
+    "ine_name": {
+      "type": "string",
+      "description": "Nombre extra\u00eddo del INE"
+    },
+    "selfie": {
+      "type": "string",
+      "description": "URL selfie de verificaci\u00f3n"
+    },
+    "license_front": {
+      "type": "string",
+      "description": "URL licencia de conducir"
+    },
+    "license_number": {
+      "type": "string",
+      "description": "N\u00famero de licencia"
+    },
+    "license_expiry": {
+      "type": "string",
+      "format": "date",
+      "description": "Vencimiento de licencia"
+    },
+    "circulation_card": {
+      "type": "string",
+      "description": "URL tarjeta de circulaci\u00f3n"
+    },
+    "circulation_owner_name": {
+      "type": "string",
+      "description": "Nombre del propietario en tarjeta"
+    },
+    "insurance_photo": {
+      "type": "string",
+      "description": "URL p\u00f3liza/seguro del veh\u00edculo"
+    },
+    "owner_letter": {
+      "type": "string",
+      "description": "URL carta responsiva (si aplica)"
+    },
+    "owner_ine": {
+      "type": "string",
+      "description": "URL INE del propietario (si aplica)"
+    },
+    "kyc_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "documents_uploaded",
+        "automated_check",
+        "manual_review",
+        "approved",
+        "rejected",
+        "suspended"
+      ],
+      "default": "pending",
+      "description": "Estado KYC del conductor (identidad)"
+    },
+    "kyc_rejection_reason": {
+      "type": "string",
+      "description": "Raz\u00f3n de rechazo de identidad"
+    },
+    "kyc_notes": {
+      "type": "string",
+      "description": "Notas del admin sobre identidad"
+    },
+    "vehicle_kyc_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "documents_uploaded",
+        "approved",
+        "rejected",
+        "needs_correction"
+      ],
+      "default": "pending",
+      "description": "Estado KYC del veh\u00edculo"
+    },
+    "vehicle_kyc_notes": {
+      "type": "string",
+      "description": "Notas del admin sobre el veh\u00edculo"
+    },
+    "ocr_confidence": {
+      "type": "number",
+      "description": "Porcentaje de confianza del OCR"
+    },
+    "face_match_confidence": {
+      "type": "number",
+      "description": "Porcentaje de match facial"
+    },
+    "owner_match": {
+      "type": "boolean",
+      "description": "Si el nombre del INE coincide con tarjeta de circulaci\u00f3n"
+    },
+    "requires_owner_letter": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si requiere carta responsiva"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "offline",
+        "online",
+        "busy",
+        "inactive"
+      ],
+      "default": "offline",
+      "description": "Estado de disponibilidad"
+    },
+    "current_location_lat": {
+      "type": "number"
+    },
+    "current_location_lng": {
+      "type": "number"
+    },
+    "last_location_update": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rating": {
+      "type": "number",
+      "default": 5.0
+    },
+    "total_rides": {
+      "type": "number",
+      "default": 0
+    },
+    "earnings_balance": {
+      "type": "number",
+      "default": 0
+    },
+    "total_earnings": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "phone",
+    "full_name"
+  ]
+}

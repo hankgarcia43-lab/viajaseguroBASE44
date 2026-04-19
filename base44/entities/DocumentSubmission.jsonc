@@ -1,0 +1,78 @@
+{
+  "name": "DocumentSubmission",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID del usuario"
+    },
+    "user_name": {
+      "type": "string",
+      "description": "Nombre del usuario"
+    },
+    "user_role": {
+      "type": "string",
+      "enum": [
+        "passenger",
+        "driver"
+      ],
+      "description": "Rol del usuario"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "identity",
+        "driver",
+        "vehicle"
+      ],
+      "description": "Categor\u00eda del documento"
+    },
+    "doc_type": {
+      "type": "string",
+      "description": "Tipo espec\u00edfico: ine_front, ine_back, selfie, license, circulation_card, insurance, vehicle_photo, passport"
+    },
+    "doc_label": {
+      "type": "string",
+      "description": "Etiqueta legible del documento"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL del archivo subido"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected",
+        "needs_correction"
+      ],
+      "default": "pending",
+      "description": "Estado de revisi\u00f3n"
+    },
+    "review_notes": {
+      "type": "string",
+      "description": "Notas del admin (motivo de rechazo o correcci\u00f3n)"
+    },
+    "reviewed_by": {
+      "type": "string",
+      "description": "Email del admin que revis\u00f3"
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha de revisi\u00f3n"
+    },
+    "driver_id": {
+      "type": "string",
+      "description": "ID del Driver record si aplica"
+    }
+  },
+  "required": [
+    "user_id",
+    "user_role",
+    "category",
+    "doc_type",
+    "file_url"
+  ]
+}

@@ -78,7 +78,7 @@ export default function Layout({ children, currentPageName }) {
   const passengerNavItems = [
     { name: 'Rutas', icon: Search, page: 'SearchRoutes' },
     { name: 'Mis reservas', icon: Calendar, page: 'MyBookings' },
-    { name: 'Soporte', icon: Bell, page: 'Soporte' },
+    { name: 'Verificación', icon: Shield, page: 'PasajeroVerificacion' },
     { name: 'Perfil', icon: User, page: 'Profile' },
   ];
 

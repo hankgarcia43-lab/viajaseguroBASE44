@@ -17,11 +17,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 
 const STEPS = [
-  { id: 'ine', title: 'INE / Identificación', icon: User, required: true },
-  { id: 'selfie', title: 'Selfie de verificación', icon: Camera, required: true },
-  { id: 'license', title: 'Licencia de conducir', icon: CreditCard, required: true },
-  { id: 'vehicle', title: 'Tarjeta de circulación', icon: FileText, required: true },
-  { id: 'photos', title: 'Fotos del vehículo', icon: Car, required: true },
+  { id: 'ine',     title: 'INE / Identificación',   icon: User,      required: true },
+  { id: 'selfie',  title: 'Selfie de verificación',  icon: Camera,    required: true },
+  { id: 'license', title: 'Licencia de conducir',    icon: CreditCard, required: true },
+  { id: 'vehicle', title: 'Tarjeta de circulación',  icon: FileText,  required: true },
+  { id: 'insurance', title: 'Póliza / Seguro del vehículo', icon: Shield, required: true },
+  { id: 'photos',  title: 'Foto del vehículo',        icon: Car,       required: true },
 ];
 
 export default function DriverOnboarding() {
@@ -77,19 +78,13 @@ export default function DriverOnboarding() {
   };
 
   const determineCurrentStep = (driverData) => {
-    if (!driverData.ine_front || !driverData.ine_back) {
-      setCurrentStep(0);
-    } else if (!driverData.selfie) {
-      setCurrentStep(1);
-    } else if (!driverData.license_front) {
-      setCurrentStep(2);
-    } else if (!driverData.circulation_card) {
-      setCurrentStep(3);
-    } else if (!driverData.vehicle_photo) {
-      setCurrentStep(4);
-    } else {
-      setCurrentStep(5);
-    }
+    if (!driverData.ine_front || !driverData.ine_back) setCurrentStep(0);
+    else if (!driverData.selfie) setCurrentStep(1);
+    else if (!driverData.license_front) setCurrentStep(2);
+    else if (!driverData.circulation_card) setCurrentStep(3);
+    else if (!driverData.insurance_photo) setCurrentStep(4);
+    else if (!driverData.vehicle_photo) setCurrentStep(5);
+    else setCurrentStep(6);
   };
 
   const handleFileUpload = async (file, field) => {
@@ -367,6 +362,24 @@ export default function DriverOnboarding() {
     }
   };
 
+  const handleInsuranceUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const fileUrl = await handleFileUpload(file, 'insurance');
+    if (fileUrl) {
+      await base44.entities.Driver.update(driver.id, { insurance_photo: fileUrl });
+      // Register in DocumentSubmission
+      await base44.entities.DocumentSubmission.create({
+        user_id: user.id, user_name: user.full_name || '', user_role: 'driver',
+        category: 'vehicle', doc_type: 'insurance', doc_label: 'Póliza / Seguro del vehículo',
+        file_url: fileUrl, status: 'pending', driver_id: driver.id
+      });
+      setDriver({ ...driver, insurance_photo: fileUrl });
+      toast.success('Póliza de seguro subida');
+      setCurrentStep(5);
+    }
+  };
+
   const handleVehiclePhotoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -380,10 +393,15 @@ export default function DriverOnboarding() {
         vehicle_year: vehicleData.year,
         vehicle_plate: vehicleData.plate
       });
-
+      // Register in DocumentSubmission
+      await base44.entities.DocumentSubmission.create({
+        user_id: user.id, user_name: user.full_name || '', user_role: 'driver',
+        category: 'vehicle', doc_type: 'vehicle_photo', doc_label: 'Foto del vehículo',
+        file_url: fileUrl, status: 'pending', driver_id: driver.id
+      });
       setDriver({ ...driver, vehicle_photo: fileUrl });
       toast.success('Foto del vehículo subida');
-      setCurrentStep(5);
+      setCurrentStep(6);
     }
   };
 
@@ -452,8 +470,9 @@ export default function DriverOnboarding() {
     if (driver?.selfie) completed++;
     if (driver?.license_front) completed++;
     if (driver?.circulation_card) completed++;
+    if (driver?.insurance_photo) completed++;
     if (driver?.vehicle_photo) completed++;
-    return (completed / 5) * 100;
+    return (completed / 6) * 100;
   };
 
   const getKYCStatusBadge = () => {
@@ -808,6 +827,38 @@ export default function DriverOnboarding() {
                         </div>
                       )}
 
+                      {/* Insurance Step */}
+                      {step.id === 'insurance' && (
+                        <div className="space-y-4">
+                          <Alert className="border-red-200 bg-red-50">
+                            <Shield className="h-4 w-4 text-red-600" />
+                            <AlertDescription className="text-red-800 font-medium">
+                              Si no cumples los requisitos, tu vehículo no será aceptado.
+                            </AlertDescription>
+                          </Alert>
+                          <Alert className="border-blue-200 bg-blue-50">
+                            <Info className="h-4 w-4 text-blue-600" />
+                            <AlertDescription className="text-blue-800">
+                              Sube una foto clara de tu póliza de seguro vehicular vigente. Es obligatoria para operar.
+                            </AlertDescription>
+                          </Alert>
+                          <label className={`flex flex-col items-center justify-center h-48 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
+                            driver?.insurance_photo ? 'border-green-300 bg-green-50' : 'border-slate-300 hover:border-blue-400 hover:bg-blue-50'
+                          }`}>
+                            {driver?.insurance_photo ? (
+                              <img src={driver.insurance_photo} alt="Seguro" className="h-full w-full object-cover rounded-lg" />
+                            ) : (
+                              <>
+                                <Shield className="w-12 h-12 text-slate-400 mb-2" />
+                                <span className="text-slate-500">Subir póliza / seguro</span>
+                                <span className="text-xs text-slate-400 mt-1">Imagen o PDF de la póliza vigente</span>
+                              </>
+                            )}
+                            <input type="file" accept="image/*,.pdf" className="hidden" onChange={handleInsuranceUpload} disabled={uploading} />
+                          </label>
+                        </div>
+                      )}
+
                       {/* Vehicle Photos Step */}
                       {step.id === 'photos' && (
                         <div className="space-y-4">
@@ -889,7 +940,7 @@ export default function DriverOnboarding() {
         </div>
 
         {/* Submit Button */}
-        {currentStep >= 5 && (
+        {currentStep >= 6 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -897,7 +948,7 @@ export default function DriverOnboarding() {
           >
             <Button
               onClick={handleSubmitForReview}
-              disabled={loading || (driver?.requires_owner_letter && (!driver?.owner_letter || !driver?.owner_ine))}
+              disabled={loading || !driver?.insurance_photo || (driver?.requires_owner_letter && (!driver?.owner_letter || !driver?.owner_ine))}
               className="w-full h-14 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-xl text-lg"
             >
               {loading ? (
