@@ -1,0 +1,177 @@
+{
+  "name": "Route",
+  "type": "object",
+  "properties": {
+    "base_route_id": {
+      "type": "string",
+      "description": "ID de ruta base (si tom\u00f3 una del admin)"
+    },
+    "driver_id": {
+      "type": "string",
+      "description": "ID del conductor"
+    },
+    "driver_name": {
+      "type": "string",
+      "description": "Nombre del conductor"
+    },
+    "driver_phone": {
+      "type": "string",
+      "description": "Tel\u00e9fono del conductor"
+    },
+    "driver_photo": {
+      "type": "string",
+      "description": "Foto del conductor"
+    },
+    "driver_rating": {
+      "type": "number",
+      "description": "Rating del conductor"
+    },
+    "vehicle_plate": {
+      "type": "string",
+      "description": "Placas del veh\u00edculo"
+    },
+    "vehicle_model": {
+      "type": "string",
+      "description": "Modelo del veh\u00edculo"
+    },
+    "vehicle_color": {
+      "type": "string",
+      "description": "Color del veh\u00edculo"
+    },
+    "origin_poi_id": {
+      "type": "string",
+      "description": "ID del POI de origen"
+    },
+    "origin_poi_name": {
+      "type": "string",
+      "description": "Nombre del POI de origen"
+    },
+    "origin_lat": {
+      "type": "number",
+      "description": "Latitud de origen"
+    },
+    "origin_lng": {
+      "type": "number",
+      "description": "Longitud de origen"
+    },
+    "origin_address": {
+      "type": "string",
+      "description": "Direcci\u00f3n exacta de origen"
+    },
+    "boarding_reference": {
+      "type": "string",
+      "description": "Referencia de abordaje (punto p\u00fablico visible)"
+    },
+    "dest_poi_id": {
+      "type": "string",
+      "description": "ID del POI de destino"
+    },
+    "dest_poi_name": {
+      "type": "string",
+      "description": "Nombre del POI de destino"
+    },
+    "dest_lat": {
+      "type": "number",
+      "description": "Latitud de destino"
+    },
+    "dest_lng": {
+      "type": "number",
+      "description": "Longitud de destino"
+    },
+    "dest_address": {
+      "type": "string",
+      "description": "Direcci\u00f3n de destino"
+    },
+    "distance_km": {
+      "type": "number",
+      "description": "Distancia estimada en km"
+    },
+    "duration_min": {
+      "type": "number",
+      "description": "Duraci\u00f3n estimada en minutos"
+    },
+    "days_of_week": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "D\u00edas disponibles: lun, mar, mie, jue, vie, sab, dom"
+    },
+    "departure_time": {
+      "type": "string",
+      "description": "Hora de salida (HH:MM)"
+    },
+    "return_trip": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si ofrece viaje de regreso"
+    },
+    "return_time": {
+      "type": "string",
+      "description": "Hora de regreso (HH:MM)"
+    },
+    "return_boarding_reference": {
+      "type": "string",
+      "description": "Referencia de abordaje para el regreso"
+    },
+    "return_boarding_address": {
+      "type": "string",
+      "description": "Direcci\u00f3n de abordaje para el regreso"
+    },
+    "total_seats": {
+      "type": "number",
+      "description": "Asientos disponibles"
+    },
+    "price_per_seat": {
+      "type": "number",
+      "description": "Precio por asiento (m\u00e1x 500 MXN)"
+    },
+    "suggested_price": {
+      "type": "number",
+      "description": "Precio sugerido por el sistema"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "paused",
+        "cancelled",
+        "completed"
+      ],
+      "default": "active",
+      "description": "Estado de la ruta"
+    },
+    "is_recurring": {
+      "type": "boolean",
+      "default": true,
+      "description": "Si es ruta recurrente semanal"
+    },
+    "total_trips": {
+      "type": "number",
+      "default": 0,
+      "description": "Total de viajes realizados"
+    },
+    "total_passengers": {
+      "type": "number",
+      "default": 0,
+      "description": "Total de pasajeros transportados"
+    },
+    "total_earnings": {
+      "type": "number",
+      "default": 0,
+      "description": "Ganancias totales de esta ruta"
+    },
+    "avg_rating": {
+      "type": "number",
+      "default": 5,
+      "description": "Rating promedio"
+    }
+  },
+  "required": [
+    "driver_id",
+    "origin_address",
+    "dest_address",
+    "total_seats",
+    "price_per_seat"
+  ]
+}

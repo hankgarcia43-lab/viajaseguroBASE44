@@ -1,29 +1,77 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { 
-  MapPin, Users, DollarSign, Star, TrendingUp,
-  Loader2, Calendar, Eye, Pause, Play, BarChart2
+  Plus, MapPin, ChevronRight, Loader2, 
+  Pencil, Trash2, CheckCircle, XCircle, Route
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'sonner';
+
+const ORIGIN_OPTIONS = [
+  // EdoMex
+  { label: '🏙️ Ecatepec Centro', zone: 'edomex' },
+  { label: '🏙️ Nezahualcóyotl (Ciudad Lago)', zone: 'edomex' },
+  { label: '🏙️ Tlalnepantla Centro', zone: 'edomex' },
+  { label: '🏙️ Naucalpan Centro', zone: 'edomex' },
+  { label: '🏙️ Texcoco Centro', zone: 'edomex' },
+  { label: '🏙️ Tultitlán', zone: 'edomex' },
+  { label: '🏙️ Cuautitlán Izcalli', zone: 'edomex' },
+  { label: '🏙️ Chimalhuacán', zone: 'edomex' },
+  { label: '🏙️ Los Reyes La Paz', zone: 'edomex' },
+  { label: '🏙️ Ixtapaluca', zone: 'edomex' },
+];
+
+const DEST_OPTIONS = [
+  // Terminales/Metro CDMX
+  { label: '🚉 Metro Indios Verdes', zone: 'cdmx' },
+  { label: '🚉 Metro Pantitlán', zone: 'cdmx' },
+  { label: '🚉 Metro Oceanía', zone: 'cdmx' },
+  { label: '🚉 Metro Politécnico', zone: 'cdmx' },
+  { label: '🚉 Metro Rosario', zone: 'cdmx' },
+  { label: '🚉 Metro Cuatro Caminos', zone: 'cdmx' },
+  { label: '🚉 Metro Barranca del Muerto', zone: 'cdmx' },
+  { label: '🚉 Metro Taxqueña', zone: 'cdmx' },
+  { label: '✈️ Aeropuerto AICM T1', zone: 'cdmx' },
+  { label: '✈️ Aeropuerto AIFA', zone: 'cdmx' },
+  { label: '🏥 Hospital General de México', zone: 'cdmx' },
+  { label: '🏥 Hospital 20 de Noviembre', zone: 'cdmx' },
+  { label: '🏥 Hospital Juárez', zone: 'cdmx' },
+  { label: '🏛️ Centro Médico Nacional Siglo XXI', zone: 'cdmx' },
+  { label: '🏫 IPN Zacatenco', zone: 'cdmx' },
+  { label: '🏫 UNAM CU', zone: 'cdmx' },
+  { label: '🏢 Santa Fe Centro', zone: 'cdmx' },
+  { label: '🏢 Periferico Sur (Pedregal)', zone: 'cdmx' },
+];
+
+const DEFAULT_FORM = {
+  name: '',
+  origin_name: '',
+  origin_zone: 'edomex',
+  origin_address: '',
+  dest_name: '',
+  dest_zone: 'cdmx',
+  dest_address: '',
+  distance_km: '',
+  duration_min: '',
+  suggested_price: '',
+  description: '',
+  active: true,
+};
 
 export default function AdminRoutes() {
-  const [routes, setRoutes] = useState([]);
-  const [bookings, setBookings] = useState([]);
+  const [baseRoutes, setBaseRoutes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('active');
-  const [stats, setStats] = useState({
-    totalRoutes: 0,
-    activeRoutes: 0,
-    totalBookings: 0,
-    totalRevenue: 0,
-    avgOccupancy: 0
-  });
+  const [showDialog, setShowDialog] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState(DEFAULT_FORM);
 
   useEffect(() => {
     loadData();
@@ -31,62 +79,92 @@ export default function AdminRoutes() {
 
   const loadData = async () => {
     try {
-      const [allRoutes, allBookings] = await Promise.all([
-        base44.entities.Route.list('-created_date', 100),
-        base44.entities.RouteBooking.list('-created_date', 200)
-      ]);
-
-      setRoutes(allRoutes);
-      setBookings(allBookings);
-
-      // Calculate stats
-      const activeRoutes = allRoutes.filter(r => r.status === 'active');
-      const confirmedBookings = allBookings.filter(b => ['confirmed', 'completed'].includes(b.status));
-      const totalRevenue = confirmedBookings.reduce((sum, b) => sum + (b.total_price || 0), 0);
-      const avgOccupancy = allRoutes.length > 0 
-        ? Math.round(allRoutes.reduce((sum, r) => sum + (r.total_passengers || 0), 0) / allRoutes.length)
-        : 0;
-
-      setStats({
-        totalRoutes: allRoutes.length,
-        activeRoutes: activeRoutes.length,
-        totalBookings: confirmedBookings.length,
-        totalRevenue,
-        avgOccupancy
-      });
-
-    } catch (error) {
-      console.error('Error loading routes:', error);
+      const routes = await base44.entities.BaseRoute.list('-created_date', 50);
+      setBaseRoutes(routes);
+    } catch (e) {
+      console.error(e);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredRoutes = routes.filter(r => {
-    if (filter === 'active') return r.status === 'active';
-    if (filter === 'paused') return r.status === 'paused';
-    return true;
-  });
+  const openNew = () => {
+    setEditing(null);
+    setForm(DEFAULT_FORM);
+    setShowDialog(true);
+  };
 
-  const getChartData = () => {
-    // Group bookings by day for last 7 days
-    const data = [];
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      const dateStr = format(date, 'yyyy-MM-dd');
-      
-      const dayBookings = bookings.filter(b => 
-        b.trip_date === dateStr && ['confirmed', 'completed'].includes(b.status)
-      );
-      
-      data.push({
-        day: format(date, 'EEE', { locale: es }),
-        reservas: dayBookings.length,
-        ingresos: dayBookings.reduce((sum, b) => sum + (b.total_price || 0), 0)
-      });
+  const openEdit = (route) => {
+    setEditing(route);
+    setForm({
+      name: route.name || '',
+      origin_name: route.origin_name || '',
+      origin_zone: route.origin_zone || 'edomex',
+      origin_address: route.origin_address || '',
+      dest_name: route.dest_name || '',
+      dest_zone: route.dest_zone || 'cdmx',
+      dest_address: route.dest_address || '',
+      distance_km: route.distance_km || '',
+      duration_min: route.duration_min || '',
+      suggested_price: route.suggested_price || '',
+      description: route.description || '',
+      active: route.active !== false,
+    });
+    setShowDialog(true);
+  };
+
+  const handleSave = async () => {
+    if (!form.name) return toast.error('Agrega un nombre para la ruta');
+    if (!form.origin_name) return toast.error('Selecciona el origen');
+    if (!form.dest_name) return toast.error('Selecciona el destino');
+    if (form.suggested_price && Number(form.suggested_price) > 500) {
+      return toast.error('El precio sugerido no puede superar $500 MXN');
     }
-    return data;
+
+    setSaving(true);
+    try {
+      const data = {
+        ...form,
+        distance_km: Number(form.distance_km) || 0,
+        duration_min: Number(form.duration_min) || 0,
+        suggested_price: Number(form.suggested_price) || 80,
+      };
+
+      if (editing) {
+        await base44.entities.BaseRoute.update(editing.id, data);
+        setBaseRoutes(baseRoutes.map(r => r.id === editing.id ? { ...r, ...data } : r));
+        toast.success('Ruta actualizada');
+      } else {
+        const created = await base44.entities.BaseRoute.create(data);
+        setBaseRoutes([created, ...baseRoutes]);
+        toast.success('Ruta base creada');
+      }
+      setShowDialog(false);
+    } catch (e) {
+      toast.error('Error al guardar la ruta');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (route) => {
+    if (!confirm(`¿Eliminar la ruta "${route.name}"?`)) return;
+    try {
+      await base44.entities.BaseRoute.delete(route.id);
+      setBaseRoutes(baseRoutes.filter(r => r.id !== route.id));
+      toast.success('Ruta eliminada');
+    } catch (e) {
+      toast.error('Error al eliminar');
+    }
+  };
+
+  const toggleActive = async (route) => {
+    try {
+      await base44.entities.BaseRoute.update(route.id, { active: !route.active });
+      setBaseRoutes(baseRoutes.map(r => r.id === route.id ? { ...r, active: !r.active } : r));
+    } catch (e) {
+      toast.error('Error al actualizar');
+    }
   };
 
   if (loading) {
@@ -98,165 +176,192 @@ export default function AdminRoutes() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 md:p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-slate-50 pb-10">
+      <div className="max-w-4xl mx-auto px-4 pt-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Gestión de Rutas</h1>
-            <p className="text-slate-500">Rutas compartidas y métricas</p>
+            <h1 className="text-2xl font-bold text-slate-900">Rutas Base</h1>
+            <p className="text-slate-500">Administra el catálogo de rutas disponibles para conductores</p>
           </div>
+          <Button onClick={openNew} className="bg-blue-600 hover:bg-blue-700 rounded-xl">
+            <Plus className="w-4 h-4 mr-2" />
+            Nueva ruta
+          </Button>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        {baseRoutes.length === 0 ? (
           <Card>
-            <CardContent className="p-4 text-center">
-              <MapPin className="w-6 h-6 text-blue-600 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-slate-900">{stats.totalRoutes}</p>
-              <p className="text-xs text-slate-500">Rutas totales</p>
+            <CardContent className="p-16 text-center">
+              <Route className="w-14 h-14 text-slate-300 mx-auto mb-4" />
+              <h3 className="font-semibold text-slate-900 mb-2">No hay rutas base aún</h3>
+              <p className="text-slate-500 mb-6">Crea la primera ruta para que los conductores puedan tomarla.</p>
+              <Button onClick={openNew} className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="w-4 h-4 mr-2" />
+                Crear primera ruta
+              </Button>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <Play className="w-6 h-6 text-green-600 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-slate-900">{stats.activeRoutes}</p>
-              <p className="text-xs text-slate-500">Activas</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <Calendar className="w-6 h-6 text-purple-600 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-slate-900">{stats.totalBookings}</p>
-              <p className="text-xs text-slate-500">Reservas</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <DollarSign className="w-6 h-6 text-green-600 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-green-600">${stats.totalRevenue.toLocaleString()}</p>
-              <p className="text-xs text-slate-500">Ingresos</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <Users className="w-6 h-6 text-orange-600 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-slate-900">{stats.avgOccupancy}</p>
-              <p className="text-xs text-slate-500">Prom. pasajeros</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Chart */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <BarChart2 className="w-5 h-5 text-blue-600" />
-              Reservas últimos 7 días
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={getChartData()}>
-                  <XAxis dataKey="day" axisLine={false} tickLine={false} />
-                  <YAxis hide />
-                  <Tooltip />
-                  <Bar dataKey="reservas" fill="#3B82F6" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Tabs */}
-        <Tabs value={filter} onValueChange={setFilter} className="mb-6">
-          <TabsList className="bg-white">
-            <TabsTrigger value="active">
-              Activas ({routes.filter(r => r.status === 'active').length})
-            </TabsTrigger>
-            <TabsTrigger value="paused">
-              Pausadas ({routes.filter(r => r.status === 'paused').length})
-            </TabsTrigger>
-            <TabsTrigger value="all">Todas</TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        {/* Routes Table */}
-        <Card>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-50 border-b">
-                  <tr>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-slate-500">Ruta</th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-slate-500">Conductor</th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-slate-500">Horario</th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-slate-500">Precio</th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-slate-500">Métricas</th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-slate-500">Estado</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {filteredRoutes.map((route) => (
-                    <tr key={route.id} className="hover:bg-slate-50">
-                      <td className="px-4 py-3">
-                        <div className="space-y-1">
-                          <p className="font-medium text-slate-900 text-sm">
-                            {route.origin_poi_name || route.origin_address?.split(',')[0]}
-                          </p>
-                          <p className="text-xs text-slate-500">
-                            → {route.dest_poi_name || route.dest_address?.split(',')[0]}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-slate-900">{route.driver_name}</p>
-                        <div className="flex items-center gap-1 text-sm">
-                          <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                          {route.driver_rating?.toFixed(1) || '5.0'}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <p className="font-medium">{route.departure_time}</p>
-                        <p className="text-xs text-slate-500">
-                          {route.days_of_week?.join(', ')}
-                        </p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <p className="font-bold text-green-600">${route.price_per_seat}</p>
-                        <p className="text-xs text-slate-500">{route.total_seats} asientos</p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="text-sm">
-                          <p>{route.total_trips || 0} viajes</p>
-                          <p className="text-slate-500">{route.total_passengers || 0} pasajeros</p>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge className={
-                          route.status === 'active' ? 'bg-green-100 text-green-700' :
-                          route.status === 'paused' ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-slate-100 text-slate-700'
-                        }>
-                          {route.status === 'active' ? 'Activa' : 
-                           route.status === 'paused' ? 'Pausada' : route.status}
+        ) : (
+          <div className="grid gap-4">
+            {baseRoutes.map((route) => (
+              <Card key={route.id} className={!route.active ? 'opacity-60' : ''}>
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="font-bold text-slate-900">{route.name}</h3>
+                        <Badge className={route.active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}>
+                          {route.active ? 'Activa' : 'Inactiva'}
                         </Badge>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              {filteredRoutes.length === 0 && (
-                <div className="text-center py-12">
-                  <MapPin className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                  <p className="text-slate-500">No hay rutas en esta categoría</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                        {route.times_taken > 0 && (
+                          <Badge className="bg-blue-100 text-blue-700">{route.times_taken} conductores</Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-slate-600 mb-1">
+                        <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
+                        <span>{route.origin_name}</span>
+                        <ChevronRight className="w-3 h-3" />
+                        <span>{route.dest_name}</span>
+                      </div>
+                      {route.suggested_price && (
+                        <p className="text-sm text-slate-500">
+                          Precio sugerido: <span className="font-semibold text-green-600">${route.suggested_price} MXN</span>
+                          {route.distance_km > 0 && ` • ${route.distance_km} km`}
+                          {route.duration_min > 0 && ` • ~${route.duration_min} min`}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <Button variant="ghost" size="icon" onClick={() => toggleActive(route)}>
+                        {route.active ? <XCircle className="w-4 h-4 text-slate-400" /> : <CheckCircle className="w-4 h-4 text-green-500" />}
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => openEdit(route)}>
+                        <Pencil className="w-4 h-4 text-slate-400" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(route)}>
+                        <Trash2 className="w-4 h-4 text-red-400" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
+
+      {/* Create / Edit Dialog */}
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editing ? 'Editar ruta base' : 'Nueva ruta base'}</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div>
+              <Label>Nombre de la ruta *</Label>
+              <Input
+                placeholder="Ej: Ecatepec → Metro Indios Verdes"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                className="mt-1"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Origen *</Label>
+                <Select value={form.origin_name} onValueChange={(v) => setForm({ ...form, origin_name: v })}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Seleccionar origen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <p className="px-3 py-1 text-xs font-semibold text-slate-500 uppercase">Estado de México</p>
+                    {ORIGIN_OPTIONS.map(o => (
+                      <SelectItem key={o.label} value={o.label}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Destino *</Label>
+                <Select value={form.dest_name} onValueChange={(v) => setForm({ ...form, dest_name: v })}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Seleccionar destino" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <p className="px-3 py-1 text-xs font-semibold text-slate-500 uppercase">CDMX</p>
+                    {DEST_OPTIONS.map(o => (
+                      <SelectItem key={o.label} value={o.label}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label>Dirección de referencia del destino</Label>
+              <Input
+                placeholder="Ej: Acceso principal Metro Indios Verdes, L3"
+                value={form.dest_address}
+                onChange={(e) => setForm({ ...form, dest_address: e.target.value })}
+                className="mt-1"
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label>Distancia (km)</Label>
+                <Input
+                  type="number"
+                  placeholder="25"
+                  value={form.distance_km}
+                  onChange={(e) => setForm({ ...form, distance_km: e.target.value })}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label>Duración (min)</Label>
+                <Input
+                  type="number"
+                  placeholder="40"
+                  value={form.duration_min}
+                  onChange={(e) => setForm({ ...form, duration_min: e.target.value })}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label>Precio sugerido ($)</Label>
+                <Input
+                  type="number"
+                  placeholder="80"
+                  max={500}
+                  value={form.suggested_price}
+                  onChange={(e) => setForm({ ...form, suggested_price: e.target.value })}
+                  className="mt-1"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label>Descripción / notas</Label>
+              <Textarea
+                placeholder="Describe puntos clave de la ruta, referencias útiles..."
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                className="mt-1 min-h-[80px]"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDialog(false)}>Cancelar</Button>
+            <Button onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : (editing ? 'Actualizar' : 'Crear ruta')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,0 +1,128 @@
+{
+  "name": "RouteBooking",
+  "type": "object",
+  "properties": {
+    "route_id": {
+      "type": "string",
+      "description": "ID de la ruta"
+    },
+    "passenger_id": {
+      "type": "string",
+      "description": "ID del pasajero"
+    },
+    "passenger_name": {
+      "type": "string",
+      "description": "Nombre del pasajero"
+    },
+    "passenger_phone": {
+      "type": "string",
+      "description": "Tel\u00e9fono del pasajero"
+    },
+    "driver_id": {
+      "type": "string",
+      "description": "ID del conductor"
+    },
+    "days_booked": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "D\u00edas reservados de la semana: lun, mar, mie, jue, vie, sab, dom"
+    },
+    "trip_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de inicio de la reserva (semana)"
+    },
+    "departure_time": {
+      "type": "string",
+      "description": "Hora de salida"
+    },
+    "seats_booked": {
+      "type": "number",
+      "default": 1,
+      "description": "Cantidad de asientos reservados"
+    },
+    "price_per_seat": {
+      "type": "number",
+      "description": "Precio por asiento"
+    },
+    "subtotal": {
+      "type": "number",
+      "description": "Subtotal antes de descuento"
+    },
+    "weekly_discount": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si aplica descuento semanal"
+    },
+    "discount_amount": {
+      "type": "number",
+      "default": 0,
+      "description": "Monto de descuento aplicado"
+    },
+    "total_price": {
+      "type": "number",
+      "description": "Precio total final"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "confirmed",
+        "in_progress",
+        "completed",
+        "cancelled",
+        "no_show"
+      ],
+      "default": "pending",
+      "description": "Estado de la reserva"
+    },
+    "payment_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "paid",
+        "refunded",
+        "cancelled"
+      ],
+      "default": "pending",
+      "description": "Estado del pago"
+    },
+    "cancelled_by": {
+      "type": "string",
+      "enum": [
+        "passenger",
+        "driver",
+        "system"
+      ],
+      "description": "Qui\u00e9n cancel\u00f3"
+    },
+    "cancel_reason": {
+      "type": "string",
+      "description": "Raz\u00f3n de cancelaci\u00f3n"
+    },
+    "pickup_point": {
+      "type": "string",
+      "description": "Punto de recogida"
+    },
+    "passenger_rating": {
+      "type": "number",
+      "description": "Rating dado por el pasajero"
+    },
+    "passenger_review": {
+      "type": "string",
+      "description": "Comentario del pasajero"
+    },
+    "driver_rating": {
+      "type": "number",
+      "description": "Rating dado al pasajero por el conductor"
+    }
+  },
+  "required": [
+    "route_id",
+    "passenger_id",
+    "days_booked",
+    "total_price"
+  ]
+}

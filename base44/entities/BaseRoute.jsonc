@@ -1,0 +1,73 @@
+{
+  "name": "BaseRoute",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nombre descriptivo de la ruta base"
+    },
+    "origin_zone": {
+      "type": "string",
+      "enum": [
+        "edomex",
+        "cdmx"
+      ],
+      "description": "Zona de origen"
+    },
+    "origin_name": {
+      "type": "string",
+      "description": "Nombre del punto de origen"
+    },
+    "origin_address": {
+      "type": "string",
+      "description": "Direcci\u00f3n de origen"
+    },
+    "dest_zone": {
+      "type": "string",
+      "enum": [
+        "edomex",
+        "cdmx"
+      ],
+      "description": "Zona de destino"
+    },
+    "dest_name": {
+      "type": "string",
+      "description": "Nombre del punto de destino"
+    },
+    "dest_address": {
+      "type": "string",
+      "description": "Direcci\u00f3n de destino"
+    },
+    "distance_km": {
+      "type": "number",
+      "description": "Distancia estimada km"
+    },
+    "duration_min": {
+      "type": "number",
+      "description": "Duraci\u00f3n estimada en minutos"
+    },
+    "suggested_price": {
+      "type": "number",
+      "description": "Precio sugerido por asiento (max 500)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descripci\u00f3n de la ruta, puntos clave"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Si est\u00e1 disponible para conductores"
+    },
+    "times_taken": {
+      "type": "number",
+      "default": 0,
+      "description": "Cu\u00e1ntos conductores han tomado esta ruta"
+    }
+  },
+  "required": [
+    "name",
+    "origin_name",
+    "dest_name"
+  ]
+}

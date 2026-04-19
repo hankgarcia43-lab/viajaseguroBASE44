@@ -52,7 +52,7 @@ export default function Layout({ children, currentPageName }) {
   };
 
   // Public pages that don't need auth
-  const publicPages = ['Landing', 'WelcomePasajero', 'WelcomeChofer'];
+  const publicPages = ['Landing', 'WelcomePasajero', 'WelcomeChofer', 'PaymentInstructions'];
   const isPublicPage = publicPages.includes(currentPageName);
 
   // Admin pages
@@ -60,7 +60,7 @@ export default function Layout({ children, currentPageName }) {
   const isAdminPage = adminPages.includes(currentPageName);
 
   // Driver pages
-  const driverPages = ['DriverDashboard', 'DriverOnboarding', 'DriverEarnings', 'DriverHistory', 'CreateRoute', 'MyRoutes'];
+  const driverPages = ['DriverDashboard', 'DriverFeed', 'DriverOnboarding', 'DriverEarnings', 'DriverHistory', 'CreateRoute', 'MyRoutes'];
   const isDriverPage = driverPages.includes(currentPageName);
 
   // Route pages (passenger)
@@ -76,28 +76,26 @@ export default function Layout({ children, currentPageName }) {
   }
 
   const passengerNavItems = [
-    { name: 'Solicitar viaje', icon: MapPin, page: 'RequestRide' },
     { name: 'Rutas', icon: Search, page: 'SearchRoutes' },
     { name: 'Mis reservas', icon: Calendar, page: 'MyBookings' },
-    { name: 'Historial', icon: Clock, page: 'PassengerHistory' },
+    { name: 'Soporte', icon: Bell, page: 'Soporte' },
     { name: 'Perfil', icon: User, page: 'Profile' },
   ];
 
   const driverNavItems = [
-    { name: 'Viajes activos', icon: Car, page: 'DriverActiveRides' },
-    { name: 'Mis rutas', icon: Route, page: 'MyRoutes' },
+    { name: 'Rutas', icon: Route, page: 'DriverFeed' },
+    { name: 'Mis rutas', icon: Car, page: 'MyRoutes' },
     { name: 'Historial', icon: Clock, page: 'DriverHistory' },
-    { name: 'Ganancias', icon: Settings, page: 'DriverEarnings' },
+    { name: 'Soporte', icon: Bell, page: 'Soporte' },
     { name: 'Perfil', icon: User, page: 'Profile' },
   ];
 
   const adminNavItems = [
     { name: 'Dashboard', icon: Home, page: 'AdminDashboard' },
     { name: 'KYC', icon: Shield, page: 'AdminKYC' },
-    { name: 'Rutas', icon: Route, page: 'AdminRoutes' },
-    { name: 'Incidentes', icon: Bell, page: 'AdminIncidents' },
+    { name: 'Rutas base', icon: Route, page: 'AdminRoutes' },
+    { name: 'Soporte', icon: Bell, page: 'AdminIncidents' },
     { name: 'Pagos', icon: Settings, page: 'AdminPayments' },
-    { name: 'Configuración', icon: Settings, page: 'AdminConfig' },
   ];
 
   const getNavItems = () => {
@@ -122,7 +120,7 @@ export default function Layout({ children, currentPageName }) {
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
               <Car className="w-5 h-5 text-white" />
             </div>
-            <span className="font-bold text-lg text-slate-900">RideApp</span>
+            <span className="font-bold text-lg text-slate-900">Viaja Seguro</span>
           </Link>
 
           <div className="flex items-center gap-3">

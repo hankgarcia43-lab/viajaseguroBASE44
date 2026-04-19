@@ -26,7 +26,7 @@ export default function WelcomePasajero() {
 
           {/* Title */}
           <h1 className="text-2xl font-bold text-center text-slate-900 mb-2">
-            Bienvenido, Pasajero
+            Bienvenido a Viaja Seguro
           </h1>
           <p className="text-center text-slate-600 mb-8">
             Viaja seguro y económico de EdoMex a CDMX

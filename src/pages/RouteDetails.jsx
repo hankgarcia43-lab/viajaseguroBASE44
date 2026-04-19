@@ -1,29 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '../utils';
 import { 
-  MapPin, Clock, Users, DollarSign, Star, Car,
-  ChevronRight, Loader2, Calendar, Phone, MessageCircle,
-  CheckCircle, AlertCircle, Minus, Plus, Shield
+  MapPin, Clock, Users, DollarSign, Star, Car, ArrowLeftRight,
+  ChevronLeft, Loader2, AlertCircle, CheckCircle, Info, Tag
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { format, parseISO } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+
+const ALL_DAYS = ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom'];
+const DAY_LABELS = { lun: 'Lunes', mar: 'Martes', mie: 'Miércoles', jue: 'Jueves', vie: 'Viernes', sab: 'Sábado', dom: 'Domingo' };
+
+const WEEKLY_DISCOUNT_RATE = 0.0666; // 6.66%
 
 export default function RouteDetails() {
   const [user, setUser] = useState(null);
   const [route, setRoute] = useState(null);
-  const [existingBookings, setExistingBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState(false);
   const [seats, setSeats] = useState(1);
-  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedDays, setSelectedDays] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -37,303 +39,283 @@ export default function RouteDetails() {
 
       const params = new URLSearchParams(window.location.search);
       const routeId = params.get('routeId');
-      const date = params.get('date') || format(new Date(), 'yyyy-MM-dd');
-      setSelectedDate(date);
+      if (!routeId) { navigate(createPageUrl('SearchRoutes')); return; }
 
-      if (!routeId) {
-        navigate(createPageUrl('SearchRoutes'));
-        return;
-      }
-
-      // Load route
       const routes = await base44.entities.Route.filter({ id: routeId });
       if (routes.length === 0) {
         toast.error('Ruta no encontrada');
         navigate(createPageUrl('SearchRoutes'));
         return;
       }
-      setRoute(routes[0]);
-
-      // Load existing bookings for this date
-      const bookings = await base44.entities.RouteBooking.filter({
-        route_id: routeId,
-        trip_date: date,
-        status: 'confirmed'
-      });
-      setExistingBookings(bookings);
-
-    } catch (error) {
-      console.error('Error loading route:', error);
+      const r = routes[0];
+      setRoute(r);
+      // Default: select all available days
+      setSelectedDays(r.days_of_week || []);
+    } catch (e) {
+      console.error(e);
     } finally {
       setLoading(false);
     }
   };
 
-  const getAvailableSeats = () => {
-    if (!route) return 0;
-    const bookedSeats = existingBookings.reduce((sum, b) => sum + (b.seats_booked || 1), 0);
-    return route.total_seats - bookedSeats;
+  const toggleDay = (day) => {
+    setSelectedDays(prev =>
+      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
+    );
+  };
+
+  const isWeeklyDiscount = () => selectedDays.length >= 5;
+
+  const calcPricing = () => {
+    const days = selectedDays.length;
+    const subtotal = seats * (route?.price_per_seat || 0) * days;
+    const weekly = isWeeklyDiscount();
+    const discountAmt = weekly ? Math.round(subtotal * WEEKLY_DISCOUNT_RATE) : 0;
+    const total = subtotal - discountAmt;
+    return { subtotal, discountAmt, total, days, weekly };
   };
 
   const handleBooking = async () => {
-    const available = getAvailableSeats();
-    if (seats > available) {
-      toast.error(`Solo hay ${available} asientos disponibles`);
-      return;
-    }
+    if (selectedDays.length === 0) return toast.error('Selecciona al menos un día');
 
-    if (!user.phone) {
-      toast.error('Necesitas un número de teléfono registrado');
-      navigate(createPageUrl('Profile'));
-      return;
-    }
+    const { total, subtotal, discountAmt, weekly } = calcPricing();
 
     setBooking(true);
     try {
-      const totalPrice = seats * route.price_per_seat;
-
-      // Create booking with pending status
       const newBooking = await base44.entities.RouteBooking.create({
         route_id: route.id,
         passenger_id: user.id,
-        passenger_name: user.full_name,
-        passenger_phone: user.phone,
+        passenger_name: user.full_name || user.email,
+        passenger_phone: user.phone || '',
         driver_id: route.driver_id,
-        trip_date: selectedDate,
+        days_booked: selectedDays,
+        trip_date: new Date().toISOString().split('T')[0],
         departure_time: route.departure_time,
         seats_booked: seats,
-        total_price: totalPrice,
+        price_per_seat: route.price_per_seat,
+        subtotal,
+        weekly_discount: weekly,
+        discount_amount: discountAmt,
+        total_price: total,
         status: 'pending',
-        payment_status: 'pending_capture'
+        payment_status: 'pending',
       });
 
-      // Notify driver
       await base44.entities.Notification.create({
         user_id: route.driver_id,
         type: 'ride_request',
-        title: '¡Nueva solicitud de reserva!',
-        message: `${user.full_name} solicita ${seats} asiento(s) para el ${format(parseISO(selectedDate), "d 'de' MMMM", { locale: es })}`,
-        data: JSON.stringify({ booking_id: newBooking.id, route_id: route.id })
+        title: '¡Nueva reserva solicitada!',
+        message: `${user.full_name || 'Un pasajero'} reservó ${seats} asiento(s) para ${selectedDays.join(', ')}`,
+        data: JSON.stringify({ booking_id: newBooking.id }),
       });
 
-      // Open WhatsApp
-      const whatsappMessage = encodeURIComponent(
-        `Hola, realicé una solicitud de viaje desde la app y deseo confirmar disponibilidad y el proceso de pago.\n\n` +
-        `🚗 Ruta: ${route.origin_poi_name || route.origin_address} → ${route.dest_poi_name || route.dest_address}\n` +
-        `📅 Fecha: ${format(parseISO(selectedDate), "d 'de' MMMM", { locale: es })}\n` +
-        `🕐 Hora: ${route.departure_time}\n` +
-        `👥 Asientos: ${seats}\n` +
-        `💰 Total: $${totalPrice} MXN\n` +
-        `🆔 ID: ${newBooking.id}\n\n` +
-        `Nombre: ${user.full_name}\n` +
-        `Teléfono: ${user.phone}`
-      );
-      
-      window.open(`https://wa.me/5215574510969?text=${whatsappMessage}`, '_blank');
-      
-      toast.success('Solicitud creada - Confirma por WhatsApp');
-      setTimeout(() => navigate(createPageUrl('MyBookings')), 2000);
-
-    } catch (error) {
-      toast.error('Error al crear solicitud');
-      console.error(error);
+      toast.success('Reserva creada. Ahora realiza el pago para confirmar tu lugar.');
+      navigate(createPageUrl('PaymentInstructions') + `?bookingId=${newBooking.id}`);
+    } catch (e) {
+      toast.error('Error al crear la reserva');
+      console.error(e);
     } finally {
       setBooking(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+    </div>
+  );
 
-  if (!route) {
-    return null;
-  }
+  if (!route) return null;
 
-  const availableSeats = getAvailableSeats();
-  const totalPrice = seats * route.price_per_seat;
+  const { subtotal, discountAmt, total, days, weekly } = calcPricing();
+
+  const availableDays = route.days_of_week || [];
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-32">
+    <div className="min-h-screen bg-slate-50 pb-36">
       <div className="max-w-2xl mx-auto px-4 pt-6">
+        {/* Back */}
+        <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-slate-500 mb-5 hover:text-slate-700">
+          <ChevronLeft className="w-4 h-4" />
+          <span className="text-sm">Volver</span>
+        </button>
+
         {/* Driver Card */}
         <Card className="mb-4">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-slate-200 overflow-hidden">
-                {route.driver_photo ? (
-                  <img src={route.driver_photo} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Car className="w-8 h-8 text-slate-400" />
-                  </div>
-                )}
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold text-slate-900">{route.driver_name}</h2>
-                  <div className="flex items-center gap-1 bg-yellow-100 px-2 py-0.5 rounded-full">
-                    <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
-                    <span className="text-sm font-medium text-yellow-700">
-                      {route.driver_rating?.toFixed(1) || '5.0'}
-                    </span>
-                  </div>
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="w-16 h-16 rounded-full bg-slate-200 overflow-hidden flex-shrink-0">
+              {route.driver_photo ? (
+                <img src={route.driver_photo} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <Car className="w-8 h-8 text-slate-400" />
                 </div>
-                <p className="text-slate-500">{route.vehicle_model} • {route.vehicle_color}</p>
-                <p className="text-sm font-medium text-slate-700">{route.vehicle_plate}</p>
+              )}
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <h2 className="font-bold text-slate-900">{route.driver_name}</h2>
+                <div className="flex items-center gap-1 bg-yellow-50 px-2 py-0.5 rounded-full">
+                  <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
+                  <span className="text-sm font-semibold text-yellow-700">{route.driver_rating?.toFixed(1) || '5.0'}</span>
+                </div>
               </div>
+              <p className="text-sm text-slate-500">{route.vehicle_model} • {route.vehicle_color}</p>
+              <p className="text-sm font-medium text-slate-700">{route.vehicle_plate}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-bold text-green-600">${route.price_per_seat}</p>
+              <p className="text-xs text-slate-500">por asiento / día</p>
             </div>
           </CardContent>
         </Card>
 
         {/* Route Info */}
         <Card className="mb-4">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Detalles de la ruta</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Origin */}
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                <MapPin className="w-5 h-5 text-blue-600" />
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                <MapPin className="w-4 h-4 text-green-600" />
               </div>
-              <div className="flex-1">
-                <p className="text-xs text-slate-500 uppercase">Salida</p>
-                <p className="font-medium text-slate-900">{route.origin_poi_name || route.origin_address}</p>
-                <p className="text-lg font-bold text-blue-600">{route.departure_time}</p>
-              </div>
-            </div>
-
-            {/* Destination */}
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                <MapPin className="w-5 h-5 text-green-600" />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs text-slate-500 uppercase">Llegada</p>
-                <p className="font-medium text-slate-900">{route.dest_poi_name || route.dest_address}</p>
-              </div>
-            </div>
-
-            {/* Stats */}
-            <div className="flex items-center justify-around pt-4 border-t">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-slate-900">{route.distance_km}</p>
-                <p className="text-xs text-slate-500">km</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-slate-900">~{route.duration_min}</p>
-                <p className="text-xs text-slate-500">minutos</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-green-600">${route.price_per_seat}</p>
-                <p className="text-xs text-slate-500">por asiento</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Schedule */}
-        <Card className="mb-4">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Calendar className="w-5 h-5 text-purple-600" />
-              <span className="font-medium text-slate-900">Fecha seleccionada</span>
-            </div>
-            <p className="text-lg font-bold text-slate-900">
-              {format(parseISO(selectedDate), "EEEE d 'de' MMMM, yyyy", { locale: es })}
-            </p>
-            <div className="flex flex-wrap gap-2 mt-3">
-              {route.days_of_week?.map(day => (
-                <Badge key={day} variant="outline">{day}</Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Availability */}
-        <Card className="mb-4">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Users className="w-5 h-5 text-blue-600" />
-                <span className="font-medium text-slate-900">Asientos disponibles</span>
-              </div>
-              <Badge className={availableSeats > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
-                {availableSeats} de {route.total_seats}
-              </Badge>
-            </div>
-
-            {availableSeats > 0 ? (
               <div>
-                <p className="text-sm text-slate-600 mb-3">¿Cuántos asientos necesitas?</p>
-                <div className="flex items-center justify-center gap-6">
-                  <button
-                    onClick={() => setSeats(Math.max(1, seats - 1))}
-                    disabled={seats <= 1}
-                    className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center disabled:opacity-50"
-                  >
-                    <Minus className="w-5 h-5" />
-                  </button>
-                  <span className="text-4xl font-bold text-slate-900">{seats}</span>
-                  <button
-                    onClick={() => setSeats(Math.min(availableSeats, seats + 1))}
-                    disabled={seats >= availableSeats}
-                    className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center disabled:opacity-50"
-                  >
-                    <Plus className="w-5 h-5" />
-                  </button>
-                </div>
+                <p className="text-xs text-slate-500 uppercase font-medium">Origen</p>
+                <p className="font-semibold text-slate-900">{route.origin_poi_name || route.origin_address}</p>
+                {route.boarding_reference && (
+                  <p className="text-sm text-slate-600 mt-0.5">📍 {route.boarding_reference}</p>
+                )}
+                <p className="text-lg font-bold text-blue-600 mt-1">{route.departure_time}</p>
               </div>
-            ) : (
-              <Alert className="border-red-200 bg-red-50">
-                <AlertCircle className="h-4 w-4 text-red-600" />
-                <AlertDescription className="text-red-700">
-                  No hay asientos disponibles para esta fecha
-                </AlertDescription>
-              </Alert>
+            </div>
+            <div className="ml-4 border-l-2 border-dashed border-slate-200 h-4" />
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                <MapPin className="w-4 h-4 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 uppercase font-medium">Destino</p>
+                <p className="font-semibold text-slate-900">{route.dest_poi_name || route.dest_address}</p>
+              </div>
+            </div>
+
+            {route.return_trip && (
+              <div className="pt-3 border-t">
+                <div className="flex items-center gap-2 text-indigo-600 mb-1">
+                  <ArrowLeftRight className="w-4 h-4" />
+                  <span className="font-semibold text-sm">Servicio de regreso disponible</span>
+                </div>
+                <p className="text-sm text-slate-600">Salida: <strong>{route.return_time}</strong> desde {route.return_boarding_reference || route.dest_poi_name}</p>
+              </div>
             )}
+
+            <div className="flex items-center gap-4 pt-3 border-t text-sm text-slate-500">
+              {route.distance_km > 0 && <span>{route.distance_km} km</span>}
+              {route.duration_min > 0 && <span>~{route.duration_min} min</span>}
+              <Badge className="bg-green-100 text-green-700">{route.total_seats} asientos</Badge>
+            </div>
           </CardContent>
         </Card>
 
-        {/* Payment Info */}
+        {/* Day selector */}
+        <Card className="mb-4">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">¿Qué días viajas?</CardTitle>
+            <p className="text-xs text-slate-500">Selecciona los días de la semana. 5+ días = descuento semanal aplicado.</p>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-7 gap-1 mb-4">
+              {ALL_DAYS.map((day) => {
+                const available = availableDays.includes(day);
+                const selected = selectedDays.includes(day);
+                return (
+                  <button
+                    key={day}
+                    onClick={() => available && toggleDay(day)}
+                    disabled={!available}
+                    className={`flex flex-col items-center py-2 rounded-xl transition-all text-xs font-bold ${
+                      !available ? 'opacity-30 cursor-not-allowed bg-slate-50' :
+                      selected ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' :
+                      'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    <span>{day.slice(0, 1).toUpperCase()}</span>
+                    <span className="text-[9px] mt-0.5 font-normal">
+                      {day.slice(0, 3)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Seats */}
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-slate-700">Asientos</span>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setSeats(Math.max(1, seats - 1))}
+                  className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center font-bold text-lg"
+                >−</button>
+                <span className="text-2xl font-bold text-slate-900 w-8 text-center">{seats}</span>
+                <button
+                  onClick={() => setSeats(Math.min(route.total_seats, seats + 1))}
+                  className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center font-bold text-lg"
+                >+</button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Pricing summary */}
+        {selectedDays.length > 0 && (
+          <Card className="mb-4">
+            <CardContent className="p-4 space-y-2">
+              <div className="flex justify-between text-sm text-slate-600">
+                <span>${route.price_per_seat} × {seats} asiento(s) × {days} día(s)</span>
+                <span>${subtotal}</span>
+              </div>
+              {weekly && (
+                <div className="flex justify-between text-sm text-green-600 font-medium">
+                  <span className="flex items-center gap-1">
+                    <Tag className="w-3.5 h-3.5" />
+                    Descuento semanal aplicado
+                  </span>
+                  <span>−${discountAmt}</span>
+                </div>
+              )}
+              <div className="flex justify-between font-bold text-slate-900 text-base pt-2 border-t">
+                <span>Total a pagar</span>
+                <span className="text-green-600">${total} MXN</span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Payment notice */}
         <Alert className="mb-6 border-amber-200 bg-amber-50">
-          <AlertCircle className="h-4 w-4 text-amber-600" />
-          <AlertDescription className="text-amber-800 font-medium">
-            💳 El pago es previo para confirmar el viaje. Recibirás instrucciones por WhatsApp.
+          <Info className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-800 text-sm">
+            Al reservar recibirás el enlace de pago de Mercado Pago. Tu lugar se confirma tras validar el pago con el equipo de soporte.
           </AlertDescription>
         </Alert>
       </div>
 
-      {/* Fixed Bottom Bar */}
-      {availableSeats > 0 && (
+      {/* Fixed bottom bar */}
+      {selectedDays.length > 0 && (
         <motion.div
           initial={{ y: 100 }}
           animate={{ y: 0 }}
           className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-2xl p-4 z-50"
         >
-          <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
+          <div className="max-w-2xl mx-auto flex items-center gap-4">
             <div>
-              <p className="text-sm text-slate-500">{seats} asiento(s)</p>
-              <p className="text-2xl font-bold text-slate-900">${totalPrice} MXN</p>
+              <p className="text-xs text-slate-500">{selectedDays.length} día(s) • {seats} asiento(s)</p>
+              <p className="text-xl font-bold text-slate-900">${total} MXN</p>
             </div>
             <Button
               onClick={handleBooking}
               disabled={booking}
-              className="flex-1 h-14 bg-green-600 hover:bg-green-700 rounded-xl text-lg"
+              className="flex-1 h-14 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 rounded-xl text-base font-bold"
             >
-              {booking ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <>
-                  <MessageCircle className="w-5 h-5 mr-2" />
-                  Confirmar por WhatsApp
-                </>
-              )}
+              {booking ? <Loader2 className="w-5 h-5 animate-spin" /> : '✅ Reservar y pagar'}
             </Button>
           </div>
         </motion.div>

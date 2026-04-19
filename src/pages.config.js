@@ -57,6 +57,7 @@ import CreateRoute from './pages/CreateRoute';
 import DriverActiveRides from './pages/DriverActiveRides';
 import DriverDashboard from './pages/DriverDashboard';
 import DriverEarnings from './pages/DriverEarnings';
+import DriverFeed from './pages/DriverFeed';
 import DriverHistory from './pages/DriverHistory';
 import DriverOnboarding from './pages/DriverOnboarding';
 import Landing from './pages/Landing';
@@ -64,12 +65,14 @@ import MyBookings from './pages/MyBookings';
 import MyRoutes from './pages/MyRoutes';
 import Notifications from './pages/Notifications';
 import PassengerHistory from './pages/PassengerHistory';
+import PaymentInstructions from './pages/PaymentInstructions';
 import Profile from './pages/Profile';
 import RateRide from './pages/RateRide';
 import ReportIncident from './pages/ReportIncident';
 import RequestRide from './pages/RequestRide';
 import RouteDetails from './pages/RouteDetails';
 import SearchRoutes from './pages/SearchRoutes';
+import Soporte from './pages/Soporte';
 import WelcomePasajero from './pages/WelcomePasajero';
 import WelcomeChofer from './pages/WelcomeChofer';
 import __Layout from './Layout.jsx';
@@ -86,6 +89,7 @@ export const PAGES = {
     "DriverActiveRides": DriverActiveRides,
     "DriverDashboard": DriverDashboard,
     "DriverEarnings": DriverEarnings,
+    "DriverFeed": DriverFeed,
     "DriverHistory": DriverHistory,
     "DriverOnboarding": DriverOnboarding,
     "Landing": Landing,
@@ -93,12 +97,14 @@ export const PAGES = {
     "MyRoutes": MyRoutes,
     "Notifications": Notifications,
     "PassengerHistory": PassengerHistory,
+    "PaymentInstructions": PaymentInstructions,
     "Profile": Profile,
     "RateRide": RateRide,
     "ReportIncident": ReportIncident,
     "RequestRide": RequestRide,
     "RouteDetails": RouteDetails,
     "SearchRoutes": SearchRoutes,
+    "Soporte": Soporte,
     "WelcomePasajero": WelcomePasajero,
     "WelcomeChofer": WelcomeChofer,
 }
