@@ -5,7 +5,7 @@ import { createPageUrl } from '../utils';
 import { 
   User, Mail, Phone, Star, Car, Shield, 
   ChevronRight, LogOut, Bell, HelpCircle,
-  CreditCard, Loader2, Camera, Edit
+  CreditCard, Loader2, Camera, Edit, UserCheck, AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,7 +21,9 @@ export default function Profile() {
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({
     full_name: '',
-    phone: ''
+    phone: '',
+    emergency_contact_name: '',
+    emergency_contact_phone: '',
   });
 
   useEffect(() => {
@@ -34,7 +36,9 @@ export default function Profile() {
       setUser(userData);
       setFormData({
         full_name: userData.full_name || '',
-        phone: userData.phone || ''
+        phone: userData.phone || '',
+        emergency_contact_name: userData.emergency_contact_name || '',
+        emergency_contact_phone: userData.emergency_contact_phone || '',
       });
 
       const drivers = await base44.entities.Driver.filter({ user_id: userData.id });
@@ -139,13 +143,29 @@ export default function Profile() {
                   Este número se usará para confirmar tu viaje por WhatsApp.
                 </p>
               </div>
+              <div>
+                <Label>Contacto de emergencia — Nombre</Label>
+                <Input
+                  value={formData.emergency_contact_name}
+                  onChange={(e) => setFormData({ ...formData, emergency_contact_name: e.target.value })}
+                  placeholder="Nombre completo"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label>Contacto de emergencia — Teléfono</Label>
+                <Input
+                  type="tel"
+                  value={formData.emergency_contact_phone}
+                  onChange={(e) => setFormData({ ...formData, emergency_contact_phone: e.target.value })}
+                  placeholder="5512345678"
+                  maxLength={10}
+                  className="mt-1"
+                />
+              </div>
               <div className="flex gap-3">
-                <Button variant="outline" onClick={() => setEditing(false)} className="flex-1">
-                  Cancelar
-                </Button>
-                <Button onClick={handleSave} className="flex-1">
-                  Guardar
-                </Button>
+                <Button variant="outline" onClick={() => setEditing(false)} className="flex-1">Cancelar</Button>
+                <Button onClick={handleSave} className="flex-1">Guardar</Button>
               </div>
             </CardContent>
           </Card>
@@ -254,6 +274,27 @@ export default function Profile() {
             </button>
           </CardContent>
         </Card>
+
+        {/* Emergency contacts */}
+        {(user?.emergency_contact_name || user?.emergency_contact_phone) && (
+          <Card className="mb-4 border-amber-200 bg-amber-50">
+            <CardContent className="p-4">
+              <p className="text-sm font-semibold text-amber-900 flex items-center gap-2 mb-2">
+                <UserCheck className="w-4 h-4" /> Contacto de emergencia
+              </p>
+              <p className="text-sm text-amber-800">{user.emergency_contact_name}</p>
+              <p className="text-sm text-amber-700">{user.emergency_contact_phone}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* 911 Button */}
+        <a href="tel:911" className="block mb-4">
+          <Button variant="outline" className="w-full border-red-200 text-red-600 hover:bg-red-50">
+            <AlertTriangle className="w-4 h-4 mr-2" />
+            Emergencias — Llamar al 911
+          </Button>
+        </a>
 
         {/* Logout */}
         <Button

@@ -6,7 +6,7 @@ import MapView from '../components/map/MapView';
 import { 
   Power, MapPin, Navigation, Clock, DollarSign, 
   Star, ChevronRight, AlertCircle, CheckCircle, X,
-  Phone, MessageCircle, Loader2, Car, Shield, Route, Plus
+  Phone, MessageCircle, Loader2, Car, Shield, Route, Plus, Zap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -293,45 +293,45 @@ export default function DriverDashboard() {
     if (!activeRide) return;
 
     try {
-      const completedAt = new Date().toISOString();
-      const retentionEnds = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 min
+      const { loadAppConfig } = await import('@/lib/useAppConfig');
+      const appConfig = await loadAppConfig();
+      const commPct = appConfig.commission_quick_ride || 20;
 
-      // Calculate final fare (could adjust based on actual route)
       const fareFinal = activeRide.fare_estimated;
-      const platformFee = Math.round(fareFinal * 0.1); // 10% commission
+      const platformFee = Math.round(fareFinal * commPct / 100);
       const driverPayout = fareFinal - platformFee;
+      const retentionEnds = new Date(Date.now() + (appConfig.retention_window_minutes || 10) * 60 * 1000).toISOString();
 
       await base44.entities.Ride.update(activeRide.id, {
         status: 'completed',
-        completed_at: completedAt,
+        completed_at: new Date().toISOString(),
         fare_final: fareFinal
       });
 
-      // Create payment record
       await base44.entities.Payment.create({
         ride_id: activeRide.id,
         passenger_id: activeRide.passenger_id,
         driver_id: driver.id,
         amount: fareFinal,
         fee_platform: platformFee,
-        fee_percentage: 10,
+        fee_percentage: commPct,
         payout_driver: driverPayout,
         status: 'pending_capture',
         retention_window_ends: retentionEnds
       });
 
-      // Update driver earnings
       await base44.entities.Driver.update(driver.id, {
         status: 'online',
         total_rides: (driver.total_rides || 0) + 1,
-        earnings_balance: (driver.earnings_balance || 0) + driverPayout
+        earnings_balance: (driver.earnings_balance || 0) + driverPayout,
+        total_earnings: (driver.total_earnings || 0) + driverPayout,
       });
 
       await base44.entities.Notification.create({
         user_id: activeRide.passenger_id,
         type: 'ride_completed',
         title: 'Viaje completado',
-        message: `Total: $${fareFinal} MXN. El cargo se procesará en 10 minutos.`,
+        message: `Total: $${fareFinal} MXN. Gracias por viajar con Viaja Seguro.`,
         ride_id: activeRide.id
       });
 
@@ -509,6 +509,20 @@ export default function DriverDashboard() {
                         </div>
                         <div className="flex-1">
                           <p className="font-medium text-slate-900">Ver mis rutas</p>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-slate-400" />
+                      </CardContent>
+                    </Card>
+                  </Link>
+                  <Link to={createPageUrl('DriverQuickRequests')} className="block mt-2">
+                    <Card className="hover:shadow-md transition-shadow border-orange-100">
+                      <CardContent className="p-4 flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                          <Zap className="w-5 h-5 text-orange-500" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-slate-900">Viajes rápidos cercanos</p>
+                          <p className="text-xs text-slate-500">Ver solicitudes disponibles</p>
                         </div>
                         <ChevronRight className="w-5 h-5 text-slate-400" />
                       </CardContent>

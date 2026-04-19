@@ -278,18 +278,28 @@ export default function MyBookings() {
                             <p className="font-medium text-slate-900">{route.driver_name}</p>
                             <p className="text-sm text-slate-500">{route.vehicle_model} • {route.vehicle_plate}</p>
                           </div>
-                          {canCancel && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedBooking(booking);
-                                setShowCancelDialog(true);
-                              }}
-                            >
-                              Cancelar
-                            </Button>
-                          )}
+                          <div className="flex flex-col gap-1 items-end">
+                            {booking.payment_status === 'paid' && (
+                              <Link to={createPageUrl('PassengerTicket') + `?bookingId=${booking.id}`}>
+                                <Button size="sm" className="bg-green-600 hover:bg-green-700 text-xs h-7 px-2">
+                                  Ver boleto
+                                </Button>
+                              </Link>
+                            )}
+                            {canCancel && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-xs h-7 px-2"
+                                onClick={() => {
+                                  setSelectedBooking(booking);
+                                  setShowCancelDialog(true);
+                                }}
+                              >
+                                Cancelar
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </CardContent>
                     </Card>

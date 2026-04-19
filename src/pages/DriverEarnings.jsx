@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { MessageCircle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { 
-  DollarSign, TrendingUp, Calendar, Clock, 
-  Loader2, Car, CreditCard, ChevronRight, Wallet
+  DollarSign, TrendingUp, Loader2, Car, CreditCard, Wallet,
+  MessageCircle, Building2, X, Save
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,6 +17,9 @@ export default function DriverEarnings() {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('week');
+  const [showBankModal, setShowBankModal] = useState(false);
+  const [bankAccount, setBankAccount] = useState('');
+  const [bankHolder, setBankHolder] = useState('');
 
   useEffect(() => {
     loadData();
@@ -74,12 +76,17 @@ export default function DriverEarnings() {
         startDate = startOfWeek(now, { weekStartsOn: 1 });
     }
 
-    const filteredRides = rides.filter(r => 
-      new Date(r.completed_at) >= startDate
-    );
+    const filteredRides = rides.filter(r => new Date(r.completed_at) >= startDate);
 
+    // Use actual payout from payments if available, else estimate with commission from config
+    const paymentsMap = {};
+    payments.forEach(p => { paymentsMap[p.ride_id] = p; });
+
+    const driverEarnings = filteredRides.reduce((sum, r) => {
+      const p = paymentsMap[r.id];
+      return sum + (p ? p.payout_driver : Math.round((r.fare_final || r.fare_estimated || 0) * 0.8));
+    }, 0);
     const totalFare = filteredRides.reduce((sum, r) => sum + (r.fare_final || r.fare_estimated || 0), 0);
-    const driverEarnings = Math.round(totalFare * 0.8); // 80% for driver
 
     return {
       rides: filteredRides.length,
@@ -92,29 +99,22 @@ export default function DriverEarnings() {
 
   const getChartData = () => {
     const now = new Date();
-    const days = eachDayOfInterval({
-      start: subDays(now, 6),
-      end: now
-    });
+    const days = eachDayOfInterval({ start: subDays(now, 6), end: now });
+    const paymentsMap = {};
+    payments.forEach(p => { paymentsMap[p.ride_id] = p; });
 
     return days.map(day => {
       const dayStart = new Date(day.setHours(0, 0, 0, 0));
       const dayEnd = new Date(day.setHours(23, 59, 59, 999));
-      
       const dayRides = rides.filter(r => {
         const completedAt = new Date(r.completed_at);
         return completedAt >= dayStart && completedAt <= dayEnd;
       });
-
-      const earnings = dayRides.reduce((sum, r) => 
-        sum + Math.round((r.fare_final || r.fare_estimated || 0) * 0.8), 0
-      );
-
-      return {
-        day: format(dayStart, 'EEE', { locale: es }),
-        earnings,
-        rides: dayRides.length
-      };
+      const earnings = dayRides.reduce((sum, r) => {
+        const p = paymentsMap[r.id];
+        return sum + (p ? p.payout_driver : Math.round((r.fare_final || r.fare_estimated || 0) * 0.8));
+      }, 0);
+      return { day: format(dayStart, 'EEE', { locale: es }), earnings, rides: dayRides.length };
     });
   };
 
@@ -137,30 +137,40 @@ export default function DriverEarnings() {
         {/* Balance Card */}
         <Card className="bg-gradient-to-br from-green-500 to-emerald-600 text-white mb-6">
           <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <Wallet className="w-5 h-5" />
                 <span className="text-white/80">Saldo disponible</span>
               </div>
-              <a
-                href={`https://wa.me/5215574510969?text=${encodeURIComponent(
-                  `Hola, soy ${driver?.full_name} y deseo solicitar el pago de mi saldo acumulado.\n\n` +
-                  `💰 Saldo disponible: $${driver?.earnings_balance?.toLocaleString() || 0} MXN\n` +
-                  `🆔 ID Conductor: ${driver?.id}\n` +
-                  `📱 Teléfono: ${driver?.phone}\n\n` +
-                  `Por favor, envíenme los detalles para completar el proceso.`
-                )}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button size="sm" className="bg-white/20 text-white hover:bg-white/30">
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Solicitar pago
-                </Button>
-              </a>
             </div>
-            <p className="text-4xl font-bold">${driver?.earnings_balance?.toLocaleString() || 0}</p>
-            <p className="text-white/60 text-sm mt-1">MXN</p>
+            <p className="text-4xl font-bold mb-1">${driver?.earnings_balance?.toLocaleString() || 0}</p>
+            <p className="text-white/60 text-sm mb-4">MXN</p>
+
+            {/* Bank account info */}
+            {driver?.bank_account ? (
+              <div className="bg-white/10 rounded-xl p-3 mb-3 text-sm">
+                <p className="text-white/70 text-xs mb-0.5">Cuenta bancaria registrada</p>
+                <p className="font-medium">{driver.bank_account}</p>
+                {driver.bank_holder && <p className="text-white/70 text-xs">{driver.bank_holder}</p>}
+              </div>
+            ) : (
+              <button onClick={() => setShowBankModal(true)} className="w-full bg-white/10 hover:bg-white/20 rounded-xl p-3 mb-3 text-sm text-left transition-colors">
+                <p className="text-white/70 text-xs">Cuenta bancaria</p>
+                <p className="font-medium text-white/90">+ Agregar para recibir pagos</p>
+              </button>
+            )}
+
+            <a
+              href={`https://wa.me/5215574510969?text=${encodeURIComponent(
+                `Hola, soy ${driver?.full_name} y deseo solicitar pago de saldo.\n💰 Saldo: $${driver?.earnings_balance?.toLocaleString() || 0} MXN\n🏦 Cuenta: ${driver?.bank_account || 'pendiente'}\n📱 ${driver?.phone}`
+              )}`}
+              target="_blank" rel="noopener noreferrer"
+            >
+              <Button size="sm" className="bg-white/20 text-white hover:bg-white/30 w-full">
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Solicitar pago a administración
+              </Button>
+            </a>
           </CardContent>
         </Card>
 
@@ -240,6 +250,53 @@ export default function DriverEarnings() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Bank modal */}
+        {showBankModal && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center p-4">
+            <div className="bg-white rounded-2xl p-5 w-full max-w-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-slate-900 flex items-center gap-2"><Building2 className="w-5 h-5 text-blue-600" />Cuenta bancaria</h3>
+                <button onClick={() => setShowBankModal(false)}><X className="w-5 h-5 text-slate-400" /></button>
+              </div>
+              <p className="text-sm text-slate-500 mb-4">Registra tu CLABE o número de cuenta para recibir pagos. La administración validará la solicitud.</p>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-sm font-medium text-slate-700">CLABE / Número de cuenta</label>
+                  <input
+                    type="text"
+                    placeholder="18 dígitos CLABE o número de cuenta"
+                    value={bankAccount}
+                    onChange={e => setBankAccount(e.target.value)}
+                    className="mt-1 w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-700">Titular de la cuenta</label>
+                  <input
+                    type="text"
+                    placeholder="Nombre completo como aparece en el banco"
+                    value={bankHolder}
+                    onChange={e => setBankHolder(e.target.value)}
+                    className="mt-1 w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <Button
+                  className="w-full"
+                  onClick={async () => {
+                    if (!bankAccount.trim() || !bankHolder.trim()) return;
+                    await base44.entities.Driver.update(driver.id, { bank_account: bankAccount, bank_holder: bankHolder });
+                    setDriver(prev => ({ ...prev, bank_account: bankAccount, bank_holder: bankHolder }));
+                    setShowBankModal(false);
+                  }}
+                  disabled={!bankAccount.trim() || !bankHolder.trim()}
+                >
+                  <Save className="w-4 h-4 mr-2" /> Guardar cuenta
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Recent Payments */}
         <Card>

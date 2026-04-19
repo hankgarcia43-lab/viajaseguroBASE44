@@ -95,6 +95,14 @@
       "type": "string",
       "description": "URL INE del propietario (si aplica)"
     },
+    "bank_account": {
+      "type": "string",
+      "description": "CLABE o cuenta bancaria para pagos"
+    },
+    "bank_holder": {
+      "type": "string",
+      "description": "Titular de la cuenta bancaria"
+    },
     "kyc_status": {
       "type": "string",
       "enum": [

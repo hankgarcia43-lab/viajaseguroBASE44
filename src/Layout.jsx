@@ -77,16 +77,16 @@ export default function Layout({ children, currentPageName }) {
 
   const passengerNavItems = [
     { name: 'Rutas', icon: Search, page: 'SearchRoutes' },
+    { name: 'Viaje rápido', icon: MapPin, page: 'QuickRide' },
     { name: 'Mis reservas', icon: Calendar, page: 'MyBookings' },
-    { name: 'Verificación', icon: Shield, page: 'PasajeroVerificacion' },
     { name: 'Perfil', icon: User, page: 'Profile' },
   ];
 
   const driverNavItems = [
-    { name: 'Rutas', icon: Route, page: 'DriverFeed' },
-    { name: 'Mis rutas', icon: Car, page: 'MyRoutes' },
-    { name: 'Historial', icon: Clock, page: 'DriverHistory' },
-    { name: 'Soporte', icon: Bell, page: 'Soporte' },
+    { name: 'Dashboard', icon: Car, page: 'DriverDashboard' },
+    { name: 'Operación', icon: Route, page: 'DriverActiveRides' },
+    { name: 'Mis rutas', icon: Calendar, page: 'MyRoutes' },
+    { name: 'Ganancias', icon: Bell, page: 'DriverEarnings' },
     { name: 'Perfil', icon: User, page: 'Profile' },
   ];
 
