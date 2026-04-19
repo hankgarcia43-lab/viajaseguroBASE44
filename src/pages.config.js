@@ -60,26 +60,25 @@ import DriverEarnings from './pages/DriverEarnings';
 import DriverFeed from './pages/DriverFeed';
 import DriverHistory from './pages/DriverHistory';
 import DriverOnboarding from './pages/DriverOnboarding';
+import DriverQuickRequests from './pages/DriverQuickRequests';
 import Landing from './pages/Landing';
 import MyBookings from './pages/MyBookings';
 import MyRoutes from './pages/MyRoutes';
 import Notifications from './pages/Notifications';
+import PasajeroVerificacion from './pages/PasajeroVerificacion';
 import PassengerHistory from './pages/PassengerHistory';
+import PassengerTicket from './pages/PassengerTicket';
 import PaymentInstructions from './pages/PaymentInstructions';
 import Profile from './pages/Profile';
+import QuickRide from './pages/QuickRide';
 import RateRide from './pages/RateRide';
 import ReportIncident from './pages/ReportIncident';
 import RequestRide from './pages/RequestRide';
 import RouteDetails from './pages/RouteDetails';
 import SearchRoutes from './pages/SearchRoutes';
-import PasajeroVerificacion from './pages/PasajeroVerificacion';
-import PassengerTicket from './pages/PassengerTicket';
-import QuickRide from './pages/QuickRide';
-import DriverActiveRides from './pages/DriverActiveRides';
-import DriverQuickRequests from './pages/DriverQuickRequests';
 import Soporte from './pages/Soporte';
-import WelcomePasajero from './pages/WelcomePasajero';
 import WelcomeChofer from './pages/WelcomeChofer';
+import WelcomePasajero from './pages/WelcomePasajero';
 import __Layout from './Layout.jsx';
 
 
@@ -97,25 +96,25 @@ export const PAGES = {
     "DriverFeed": DriverFeed,
     "DriverHistory": DriverHistory,
     "DriverOnboarding": DriverOnboarding,
+    "DriverQuickRequests": DriverQuickRequests,
     "Landing": Landing,
     "MyBookings": MyBookings,
     "MyRoutes": MyRoutes,
     "Notifications": Notifications,
+    "PasajeroVerificacion": PasajeroVerificacion,
     "PassengerHistory": PassengerHistory,
+    "PassengerTicket": PassengerTicket,
     "PaymentInstructions": PaymentInstructions,
     "Profile": Profile,
+    "QuickRide": QuickRide,
     "RateRide": RateRide,
     "ReportIncident": ReportIncident,
     "RequestRide": RequestRide,
     "RouteDetails": RouteDetails,
     "SearchRoutes": SearchRoutes,
-    "PasajeroVerificacion": PasajeroVerificacion,
-    "PassengerTicket": PassengerTicket,
-    "QuickRide": QuickRide,
-    "DriverQuickRequests": DriverQuickRequests,
     "Soporte": Soporte,
-    "WelcomePasajero": WelcomePasajero,
     "WelcomeChofer": WelcomeChofer,
+    "WelcomePasajero": WelcomePasajero,
 }
 
 export const pagesConfig = {
