@@ -4,8 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { createPageUrl } from './utils';
 import { 
   Car, User, Menu, X, Home, Clock, Settings, LogOut, 
-  Shield, Bell, ChevronRight, MapPin, Route, Search, Calendar, ArrowLeft,
-  Sun, Moon
+  Shield, Bell, ChevronRight, MapPin, Route, Search, Calendar, ArrowLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -16,20 +15,8 @@ export default function Layout({ children, currentPageName }) {
   const [driver, setDriver] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
   const navigate = useNavigate();
   const location = useLocation();
-
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-      document.documentElement.classList.remove('light');
-    } else {
-      document.documentElement.classList.remove('dark');
-      document.documentElement.classList.add('light');
-    }
-    localStorage.setItem('darkMode', darkMode);
-  }, [darkMode]);
 
   useEffect(() => {
     loadUserData();
@@ -152,12 +139,6 @@ export default function Layout({ children, currentPageName }) {
           )}
 
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setDarkMode(prev => !prev)}
-              className="p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 dark:text-slate-300 transition-colors"
-            >
-              {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
             <Link to={createPageUrl('Notifications')} className="relative">
               <Bell className="w-5 h-5 text-slate-600" />
               {notifications.length > 0 && (
