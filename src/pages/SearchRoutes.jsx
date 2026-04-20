@@ -150,8 +150,8 @@ export default function SearchRoutes() {
 
   return (
     <PullToRefresh onRefresh={searchRoutes}>
-    <div className="min-h-screen bg-slate-50 pb-24">
-      <div className="max-w-2xl mx-auto px-4 pt-6">
+      <div className="min-h-screen bg-slate-50 pb-24">
+        <div className="max-w-2xl mx-auto px-4 pt-6">
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-slate-900">Buscar rutas</h1>
@@ -340,10 +340,11 @@ export default function SearchRoutes() {
             </AnimatePresence>
           </div>
         )}
+        </div>
       </div>
 
-        {/* POI Selection Sheet */}
-        <Sheet open={!!selectingFor} onOpenChange={() => setSelectingFor(null)}>
+      {/* POI Selection Sheet */}
+      <Sheet open={!!selectingFor} onOpenChange={() => setSelectingFor(null)}>
         <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl">
           <SheetHeader>
             <SheetTitle>
@@ -362,7 +363,6 @@ export default function SearchRoutes() {
               />
             </div>
 
-            {/* Category Headers */}
             {selectingFor === 'origin' && (
               <div className="flex items-center gap-2 mb-3">
                 <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
@@ -386,52 +386,52 @@ export default function SearchRoutes() {
                   return true;
                 })
                 .map((poi) => {
-                const Icon = getPoiIcon(poi);
-                return (
-                  <button
-                    key={poi.id}
-                    onClick={() => selectPOI(poi)}
-                    className="w-full flex items-center gap-4 p-4 rounded-xl hover:bg-slate-50 transition-colors text-left"
-                  >
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                      poi.tags?.includes('metro') ? 'bg-orange-100' :
-                      poi.tags?.includes('hospital') ? 'bg-red-100' :
-                      poi.tags?.includes('universidad') ? 'bg-blue-100' :
-                      poi.tags?.includes('aeropuerto') ? 'bg-sky-100' :
-                      poi.tags?.includes('industrial') ? 'bg-slate-100' :
-                      'bg-purple-100'
-                    }`}>
-                      <Icon className={`w-6 h-6 ${
-                        poi.tags?.includes('metro') ? 'text-orange-600' :
-                        poi.tags?.includes('hospital') ? 'text-red-600' :
-                        poi.tags?.includes('universidad') ? 'text-blue-600' :
-                        poi.tags?.includes('aeropuerto') ? 'text-sky-600' :
-                        poi.tags?.includes('industrial') ? 'text-slate-600' :
-                        'text-purple-600'
-                      }`} />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-slate-900">{poi.short_name || poi.name}</p>
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm text-slate-500 truncate">{poi.name}</p>
-                        {poi.zone === 'edomex' && (
-                          <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-green-300 text-green-700">EdoMex</Badge>
-                        )}
-                        {poi.zone === 'cdmx' && (
-                          <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-blue-300 text-blue-700">CDMX</Badge>
-                        )}
+                  const Icon = getPoiIcon(poi);
+                  return (
+                    <button
+                      key={poi.id}
+                      onClick={() => selectPOI(poi)}
+                      className="w-full flex items-center gap-4 p-4 rounded-xl hover:bg-slate-50 transition-colors text-left"
+                    >
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                        poi.tags?.includes('metro') ? 'bg-orange-100' :
+                        poi.tags?.includes('hospital') ? 'bg-red-100' :
+                        poi.tags?.includes('universidad') ? 'bg-blue-100' :
+                        poi.tags?.includes('aeropuerto') ? 'bg-sky-100' :
+                        poi.tags?.includes('industrial') ? 'bg-slate-100' :
+                        'bg-purple-100'
+                      }`}>
+                        <Icon className={`w-6 h-6 ${
+                          poi.tags?.includes('metro') ? 'text-orange-600' :
+                          poi.tags?.includes('hospital') ? 'text-red-600' :
+                          poi.tags?.includes('universidad') ? 'text-blue-600' :
+                          poi.tags?.includes('aeropuerto') ? 'text-sky-600' :
+                          poi.tags?.includes('industrial') ? 'text-slate-600' :
+                          'text-purple-600'
+                        }`} />
                       </div>
-                    </div>
-                    {poi.priority >= 95 && (
-                      <Badge className="bg-amber-100 text-amber-700">⭐</Badge>
-                    )}
-                  </button>
-                );
-              })}
+                      <div className="flex-1">
+                        <p className="font-medium text-slate-900">{poi.short_name || poi.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm text-slate-500 truncate">{poi.name}</p>
+                          {poi.zone === 'edomex' && (
+                            <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-green-300 text-green-700">EdoMex</Badge>
+                          )}
+                          {poi.zone === 'cdmx' && (
+                            <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-blue-300 text-blue-700">CDMX</Badge>
+                          )}
+                        </div>
+                      </div>
+                      {poi.priority >= 95 && (
+                        <Badge className="bg-amber-100 text-amber-700">⭐</Badge>
+                      )}
+                    </button>
+                  );
+                })}
             </div>
           </div>
         </SheetContent>
-        </Sheet>
+      </Sheet>
     </PullToRefresh>
   );
 }
