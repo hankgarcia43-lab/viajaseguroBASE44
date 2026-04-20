@@ -41,13 +41,13 @@ export default function RouteDetails() {
       const routeId = params.get('routeId');
       if (!routeId) { navigate(createPageUrl('SearchRoutes')); return; }
 
-      const routes = await base44.entities.Route.filter({ id: routeId });
-      if (routes.length === 0) {
+      const allRoutes = await base44.entities.Route.list('-created_date', 200);
+      const r = allRoutes.find(r => r.id === routeId);
+      if (!r) {
         toast.error('Ruta no encontrada');
         navigate(createPageUrl('SearchRoutes'));
         return;
       }
-      const r = routes[0];
       setRoute(r);
       // Default: select all available days
       setSelectedDays(r.days_of_week || []);
@@ -89,7 +89,7 @@ export default function RouteDetails() {
         passenger_phone: user.phone || '',
         driver_id: route.driver_id,
         days_booked: selectedDays,
-        trip_date: new Date().toISOString().split('T')[0],
+        trip_date: new URLSearchParams(window.location.search).get('date') || new Date().toISOString().split('T')[0],
         departure_time: route.departure_time,
         seats_booked: seats,
         price_per_seat: route.price_per_seat,

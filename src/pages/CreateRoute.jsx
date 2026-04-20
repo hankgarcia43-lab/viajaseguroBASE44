@@ -410,7 +410,7 @@ export default function CreateRoute() {
               <Slider
                 value={[routeData.pricePerSeat]}
                 onValueChange={([value]) => setRouteData({ ...routeData, pricePerSeat: value })}
-                max={200}
+                max={500}
                 min={20}
                 step={5}
               />

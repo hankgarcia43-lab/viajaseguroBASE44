@@ -282,11 +282,11 @@ export default function Profile() {
               <span className="flex-1 font-medium text-slate-900">Notificaciones</span>
               <ChevronRight className="w-5 h-5 text-slate-400" />
             </Link>
-            <button className="w-full flex items-center gap-4 p-4 hover:bg-slate-50 text-left">
+            <Link to={createPageUrl('Soporte')} className="w-full flex items-center gap-4 p-4 hover:bg-slate-50 text-left">
               <HelpCircle className="w-5 h-5 text-slate-400" />
               <span className="flex-1 font-medium text-slate-900">Ayuda y soporte</span>
               <ChevronRight className="w-5 h-5 text-slate-400" />
-            </button>
+            </Link>
           </CardContent>
         </Card>
 

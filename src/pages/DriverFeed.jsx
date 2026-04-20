@@ -195,6 +195,8 @@ export default function DriverFeed() {
         )}
       </div>
 
+    </div>
+
       {/* Take Route Sheet */}
       {selectedRoute && (
         <TakeRouteSheet
@@ -205,7 +207,6 @@ export default function DriverFeed() {
           user={user}
         />
       )}
-    </div>
     </PullToRefresh>
   );
 }

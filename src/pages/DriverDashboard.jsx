@@ -162,7 +162,9 @@ export default function DriverDashboard() {
     today.setHours(0, 0, 0, 0);
 
     const rides = await base44.entities.Ride.filter(
-      { driver_id: driverId, status: 'completed' }
+      { driver_id: driverId, status: 'completed' },
+      '-completed_at',
+      100
     );
 
     const todayRides = rides.filter(r => new Date(r.completed_at) >= today);
@@ -293,8 +295,11 @@ export default function DriverDashboard() {
     if (!activeRide) return;
 
     try {
-      const { loadAppConfig } = await import('@/lib/useAppConfig');
-      const appConfig = await loadAppConfig();
+      const appConfigList = await base44.entities.AppConfig.filter({});
+      const appConfig = {};
+      appConfigList.forEach(c => {
+        appConfig[c.config_key] = c.config_type === 'number' ? parseFloat(c.config_value) : c.config_value;
+      });
       const commPct = appConfig.commission_quick_ride || 20;
 
       const fareFinal = activeRide.fare_estimated;

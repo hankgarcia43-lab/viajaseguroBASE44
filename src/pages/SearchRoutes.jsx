@@ -83,9 +83,10 @@ export default function SearchRoutes() {
         allRoutes = allRoutes.filter(r => r.dest_poi_id === filters.destination.id);
       }
 
-      // Filter by day of week
+      // Filter by day of week — parse date parts directly to avoid timezone issues
       if (filters.date) {
-        const date = new Date(filters.date);
+        const [year, month, day] = filters.date.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
         const dayMap = ['dom', 'lun', 'mar', 'mie', 'jue', 'vie', 'sab'];
         const dayOfWeek = dayMap[date.getDay()];
         allRoutes = allRoutes.filter(r => r.days_of_week?.includes(dayOfWeek));
@@ -340,7 +341,6 @@ export default function SearchRoutes() {
           </div>
         )}
       </div>
-    </div>
 
         {/* POI Selection Sheet */}
         <Sheet open={!!selectingFor} onOpenChange={() => setSelectingFor(null)}>

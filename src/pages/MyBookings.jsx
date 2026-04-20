@@ -45,14 +45,14 @@ export default function MyBookings() {
 
       // Load route details
       const routeIds = [...new Set(myBookings.map(b => b.route_id))];
-      const routeDetails = {};
-      for (const routeId of routeIds) {
-        const routeData = await base44.entities.Route.filter({ id: routeId });
-        if (routeData.length > 0) {
-          routeDetails[routeId] = routeData[0];
-        }
+      if (routeIds.length > 0) {
+        const allRoutes = await base44.entities.Route.list('-created_date', 200);
+        const routeDetails = {};
+        allRoutes.forEach(r => {
+          if (routeIds.includes(r.id)) routeDetails[r.id] = r;
+        });
+        setRoutes(routeDetails);
       }
-      setRoutes(routeDetails);
 
     } catch (error) {
       console.error('Error loading bookings:', error);
@@ -62,8 +62,9 @@ export default function MyBookings() {
   };
 
   const filteredBookings = bookings.filter(b => {
-    const tripDate = parseISO(b.trip_date);
-    const isUpcoming = !isPast(tripDate) && ['pending', 'confirmed'].includes(b.status);
+    // Compare only date portion (ignore time) to avoid timezone issues
+    const today = new Date().toISOString().split('T')[0];
+    const isUpcoming = b.trip_date >= today && ['pending', 'confirmed'].includes(b.status);
     const isCompleted = b.status === 'completed';
     const isCancelled = b.status === 'cancelled' || b.status === 'no_show';
     
@@ -189,7 +190,7 @@ export default function MyBookings() {
         <Tabs value={filter} onValueChange={setFilter} className="mb-6">
           <TabsList className="w-full bg-white">
             <TabsTrigger value="upcoming" className="flex-1">
-              Próximas ({bookings.filter(b => !isPast(parseISO(b.trip_date)) && ['pending', 'confirmed'].includes(b.status)).length})
+              Próximas ({bookings.filter(b => { const today = new Date().toISOString().split('T')[0]; return b.trip_date >= today && ['pending', 'confirmed'].includes(b.status); }).length})
             </TabsTrigger>
             <TabsTrigger value="completed" className="flex-1">
               Completadas
@@ -220,7 +221,8 @@ export default function MyBookings() {
                 if (!route) return null;
 
                 const tripDate = parseISO(booking.trip_date);
-                const canCancel = !isPast(tripDate) && ['pending', 'confirmed'].includes(booking.status);
+                const today = new Date().toISOString().split('T')[0];
+                const canCancel = booking.trip_date >= today && ['pending', 'confirmed'].includes(booking.status);
 
                 return (
                   <motion.div
