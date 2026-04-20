@@ -89,18 +89,32 @@
       "default": "pending",
       "description": "Estado del pago"
     },
+    "receipt_url": {
+      "type": "string",
+      "description": "URL del comprobante de pago subido por el pasajero"
+    },
+    "payment_approved_by": {
+      "type": "string",
+      "description": "Email del admin que aprob\u00f3 el pago"
+    },
+    "payment_approved_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha y hora de aprobaci\u00f3n del pago"
+    },
     "cancelled_by": {
       "type": "string",
       "enum": [
         "passenger",
         "driver",
-        "system"
+        "system",
+        "admin"
       ],
       "description": "Qui\u00e9n cancel\u00f3"
     },
     "cancel_reason": {
       "type": "string",
-      "description": "Raz\u00f3n de cancelaci\u00f3n"
+      "description": "Raz\u00f3n de cancelaci\u00f3n o rechazo de pago"
     },
     "pickup_point": {
       "type": "string",

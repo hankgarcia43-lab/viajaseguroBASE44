@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { 
   Settings, DollarSign, Clock, Percent, MapPin,
-  Save, Loader2, RefreshCw, Zap, Route
+  Save, Loader2, RefreshCw, Zap, Route, Building2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,10 @@ import { Slider } from '@/components/ui/slider';
 import { toast } from 'sonner';
 
 const DEFAULTS = {
+  bank_name: 'BBVA',
+  bank_account_holder: 'Viaja Seguro S.A. de C.V.',
+  bank_clabe: '',
+  bank_account_number: '',
   commission_recurring: 10,
   commission_quick_ride: 20,
   base_fare: 12,
@@ -96,6 +100,32 @@ export default function AdminConfig() {
         </div>
 
         <div className="space-y-6">
+          {/* Datos bancarios */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Building2 className="w-5 h-5 text-blue-600" />Datos bancarios (visibles al pasajero)</CardTitle>
+              <CardDescription>Estos datos aparecerán en la pantalla de pago del pasajero para que realice su depósito.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid md:grid-cols-2 gap-6">
+              {[
+                { key: 'bank_name', label: 'Banco', placeholder: 'Ej: BBVA, Banorte, HSBC' },
+                { key: 'bank_account_holder', label: 'Titular de la cuenta', placeholder: 'Nombre completo o razón social' },
+                { key: 'bank_clabe', label: 'CLABE interbancaria (18 dígitos)', placeholder: '012345678901234567' },
+                { key: 'bank_account_number', label: 'Número de cuenta', placeholder: '1234567890' },
+              ].map(({ key, label, placeholder }) => (
+                <div key={key}>
+                  <Label>{label}</Label>
+                  <Input
+                    value={config[key] || ''}
+                    onChange={e => set(key, e.target.value)}
+                    placeholder={placeholder}
+                    className="mt-2 font-mono"
+                  />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
           {/* Comisiones por tipo */}
           <Card>
             <CardHeader>

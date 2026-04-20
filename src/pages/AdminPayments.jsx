@@ -2,190 +2,224 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { 
   DollarSign, CreditCard, AlertCircle, CheckCircle, 
-  Clock, Loader2, RefreshCw, Download, Ban
+  Clock, Loader2, RefreshCw, X, Eye, Image, Users,
+  MapPin, Ban
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 
 export default function AdminPayments() {
-  const [payments, setPayments] = useState([]);
+  const [user, setUser] = useState(null);
+  const [bookings, setBookings] = useState([]);
+  const [routesMap, setRoutesMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('pending');
-  const [selectedPayment, setSelectedPayment] = useState(null);
-  const [showDialog, setShowDialog] = useState(false);
-  const [action, setAction] = useState('');
-  const [refundAmount, setRefundAmount] = useState('');
-  const [reason, setReason] = useState('');
+  const [selected, setSelected] = useState(null);
+  const [action, setAction] = useState(''); // 'approve' | 'reject'
+  const [rejectReason, setRejectReason] = useState('');
   const [processing, setProcessing] = useState(false);
-  const [stats, setStats] = useState({
-    totalGMV: 0,
-    pendingCapture: 0,
-    captured: 0,
-    disputed: 0
-  });
+  const [showReceiptDialog, setShowReceiptDialog] = useState(false);
+  const [showActionDialog, setShowActionDialog] = useState(false);
 
-  useEffect(() => {
-    loadPayments();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
-  const loadPayments = async () => {
+  const loadData = async () => {
+    setLoading(true);
     try {
-      const allPayments = await base44.entities.Payment.list('-created_date', 200);
-      setPayments(allPayments);
+      const userData = await base44.auth.me();
+      if (userData?.role !== 'admin') {
+        toast.error('Acceso restringido a administradores');
+        return;
+      }
+      setUser(userData);
 
-      // Calculate stats
-      const totalGMV = allPayments
-        .filter(p => p.status === 'captured')
-        .reduce((sum, p) => sum + (p.amount || 0), 0);
-      
-      const pendingCapture = allPayments
-        .filter(p => ['preauthorized', 'pending_capture'].includes(p.status))
-        .reduce((sum, p) => sum + (p.amount || 0), 0);
-      
-      const captured = allPayments
-        .filter(p => p.status === 'captured')
-        .reduce((sum, p) => sum + (p.amount || 0), 0);
-      
-      const disputed = allPayments
-        .filter(p => p.dispute_flag)
-        .length;
+      const allBookings = await base44.entities.RouteBooking.list('-created_date', 200);
+      setBookings(allBookings);
 
-      setStats({ totalGMV, pendingCapture, captured, disputed });
-
-    } catch (error) {
-      console.error('Error loading payments:', error);
+      const routeIds = [...new Set(allBookings.map(b => b.route_id).filter(Boolean))];
+      if (routeIds.length > 0) {
+        const allRoutes = await base44.entities.Route.list('-created_date', 200);
+        const rMap = {};
+        allRoutes.forEach(r => { rMap[r.id] = r; });
+        setRoutesMap(rMap);
+      }
+    } catch (e) {
+      console.error(e);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredPayments = payments.filter(p => {
-    if (filter === 'pending') return ['preauthorized', 'pending_capture'].includes(p.status);
-    if (filter === 'captured') return p.status === 'captured';
-    if (filter === 'disputed') return p.dispute_flag;
-    if (filter === 'refunded') return p.status === 'refunded';
+  const filteredBookings = bookings.filter(b => {
+    if (filter === 'pending') return b.payment_status === 'pending' && b.status !== 'cancelled';
+    if (filter === 'paid') return b.payment_status === 'paid';
+    if (filter === 'rejected') return b.payment_status === 'cancelled';
     return true;
   });
 
+  const pendingWithReceipt = bookings.filter(b => b.payment_status === 'pending' && b.receipt_url && b.status !== 'cancelled');
+
+  const openApprove = (booking) => {
+    setSelected(booking);
+    setAction('approve');
+    setRejectReason('');
+    setShowActionDialog(true);
+  };
+
+  const openReject = (booking) => {
+    setSelected(booking);
+    setAction('reject');
+    setRejectReason('');
+    setShowActionDialog(true);
+  };
+
   const handleAction = async () => {
-    if (!selectedPayment) return;
+    if (!selected || !user) return;
+    if (action === 'reject' && !rejectReason.trim()) {
+      toast.error('Escribe el motivo del rechazo');
+      return;
+    }
 
     setProcessing(true);
     try {
-      const user = await base44.auth.me();
+      const route = routesMap[selected.route_id];
 
-      if (action === 'capture') {
-        await base44.entities.Payment.update(selectedPayment.id, {
-          status: 'captured',
-          captured_at: new Date().toISOString(),
-          dispute_flag: false
-        });
+      if (action === 'approve') {
+        // Guard: already paid
+        if (selected.payment_status === 'paid') {
+          toast.error('Este pago ya fue aprobado anteriormente');
+          return;
+        }
 
-        // Update driver balance
-        if (selectedPayment.driver_id) {
-          const drivers = await base44.entities.Driver.filter({ id: selectedPayment.driver_id });
-          if (drivers.length > 0) {
-            await base44.entities.Driver.update(drivers[0].id, {
-              earnings_balance: (drivers[0].earnings_balance || 0) + selectedPayment.payout_driver
-            });
+        // Guard: check seat availability
+        if (route) {
+          const activeBookings = await base44.entities.RouteBooking.filter({ route_id: selected.route_id });
+          const alreadyBooked = activeBookings.filter(b => 
+            b.id !== selected.id && ['confirmed', 'in_progress'].includes(b.status)
+          ).reduce((sum, b) => sum + (b.seats_booked || 1), 0);
+          const available = (route.total_seats || 0) - alreadyBooked;
+          if (available < (selected.seats_booked || 1)) {
+            toast.error(`Sin lugares disponibles. Solo quedan ${available} asiento(s).`);
+            return;
           }
         }
 
-        toast.success('Pago capturado');
-
-      } else if (action === 'refund') {
-        const amount = parseFloat(refundAmount) || selectedPayment.amount;
-        
-        await base44.entities.Payment.update(selectedPayment.id, {
-          status: 'refunded',
-          refund_amount: amount,
-          refund_reason: reason
+        // Approve: update booking
+        await base44.entities.RouteBooking.update(selected.id, {
+          status: 'confirmed',
+          payment_status: 'paid',
         });
 
-        toast.success('Reembolso procesado');
-
-      } else if (action === 'cancel') {
-        await base44.entities.Payment.update(selectedPayment.id, {
-          status: 'cancelled'
+        // Notify passenger
+        await base44.entities.Notification.create({
+          user_id: selected.passenger_id,
+          type: 'payment',
+          title: '¡Pago aprobado!',
+          message: 'Pago aprobado. Tu boleto ya está disponible.',
+          data: JSON.stringify({ booking_id: selected.id }),
+          ride_id: selected.route_id,
         });
 
-        toast.success('Pago cancelado');
+        // Notify driver
+        if (route) {
+          const activeBookingsAfter = await base44.entities.RouteBooking.filter({ route_id: selected.route_id });
+          const bookedSeats = activeBookingsAfter.filter(b => 
+            ['confirmed', 'in_progress'].includes(b.status)
+          ).reduce((sum, b) => sum + (b.seats_booked || 1), 0);
+          const remaining = Math.max(0, (route.total_seats || 0) - bookedSeats);
+
+          await base44.entities.Notification.create({
+            user_id: route.driver_id,
+            type: 'payment',
+            title: '¡Nueva reserva confirmada!',
+            message: `Se reservó y pagó ${selected.seats_booked || 1} asiento(s) en tu ruta ${route.origin_poi_name || route.origin_address} → ${route.dest_poi_name || route.dest_address}. Quedan ${remaining} lugar(es) disponibles.`,
+            data: JSON.stringify({ booking_id: selected.id, route_id: selected.route_id }),
+          });
+        }
+
+        // Audit log
+        await base44.entities.AuditLog.create({
+          user_id: user.id,
+          user_email: user.email,
+          action: 'payment_capture',
+          entity_type: 'RouteBooking',
+          entity_id: selected.id,
+          details: JSON.stringify({ approved_by: user.email, booking_id: selected.id, amount: selected.total_price }),
+        });
+
+        toast.success('Pago aprobado. El conductor fue notificado de la reserva confirmada.');
+
+      } else if (action === 'reject') {
+        await base44.entities.RouteBooking.update(selected.id, {
+          payment_status: 'cancelled',
+          cancel_reason: rejectReason,
+        });
+
+        // Notify passenger
+        await base44.entities.Notification.create({
+          user_id: selected.passenger_id,
+          type: 'payment',
+          title: 'Pago rechazado',
+          message: `Pago rechazado. Revisa el motivo y vuelve a subir comprobante. Motivo: ${rejectReason}`,
+          data: JSON.stringify({ booking_id: selected.id }),
+        });
+
+        // Audit log
+        await base44.entities.AuditLog.create({
+          user_id: user.id,
+          user_email: user.email,
+          action: 'payment_refund',
+          entity_type: 'RouteBooking',
+          entity_id: selected.id,
+          details: JSON.stringify({ rejected_by: user.email, reason: rejectReason }),
+        });
+
+        toast.success('Pago rechazado. El pasajero fue notificado.');
       }
 
-      // Log action
-      await base44.entities.AuditLog.create({
-        user_id: user.id,
-        user_email: user.email,
-        action: action === 'capture' ? 'payment_capture' : 'payment_refund',
-        entity_type: 'Payment',
-        entity_id: selectedPayment.id,
-        details: JSON.stringify({ action, amount: refundAmount, reason })
-      });
+      await loadData();
+      setShowActionDialog(false);
+      setSelected(null);
 
-      await loadPayments();
-      setShowDialog(false);
-      setSelectedPayment(null);
-      setRefundAmount('');
-      setReason('');
-
-    } catch (error) {
-      toast.error('Error al procesar');
+    } catch (e) {
+      toast.error('Error al procesar la acción');
+      console.error(e);
     } finally {
       setProcessing(false);
     }
   };
 
-  const openActionDialog = (payment, actionType) => {
-    setSelectedPayment(payment);
-    setAction(actionType);
-    setRefundAmount(payment.amount?.toString() || '');
-    setReason('');
-    setShowDialog(true);
+  const getPaymentBadge = (b) => {
+    if (b.payment_status === 'paid') return <Badge className="bg-green-100 text-green-700">Pagado</Badge>;
+    if (b.payment_status === 'cancelled') return <Badge className="bg-red-100 text-red-700">Rechazado</Badge>;
+    if (b.receipt_url) return <Badge className="bg-amber-100 text-amber-700">Comprobante subido</Badge>;
+    return <Badge className="bg-slate-100 text-slate-600">Sin comprobante</Badge>;
   };
 
-  const getStatusBadge = (payment) => {
-    if (payment.dispute_flag) {
-      return <Badge className="bg-red-100 text-red-700">Disputado</Badge>;
-    }
-    
-    const statuses = {
-      preauthorized: { color: 'bg-blue-100 text-blue-700', text: 'Pre-autorizado' },
-      pending_capture: { color: 'bg-yellow-100 text-yellow-700', text: 'Pendiente' },
-      captured: { color: 'bg-green-100 text-green-700', text: 'Capturado' },
-      refunded: { color: 'bg-purple-100 text-purple-700', text: 'Reembolsado' },
-      cancelled: { color: 'bg-slate-100 text-slate-700', text: 'Cancelado' },
-      failed: { color: 'bg-red-100 text-red-700', text: 'Fallido' }
-    };
-    const s = statuses[payment.status] || statuses.pending_capture;
-    return <Badge className={s.color}>{s.text}</Badge>;
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
+        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Gestión de pagos</h1>
-            <p className="text-slate-500">Capturas, reembolsos y disputas</p>
+            <p className="text-slate-500">Aprobación de reservas y comprobantes</p>
           </div>
-          <Button variant="outline" onClick={loadPayments}>
+          <Button variant="outline" onClick={loadData}>
             <RefreshCw className="w-4 h-4 mr-2" />
             Actualizar
           </Button>
@@ -194,248 +228,289 @@ export default function AdminPayments() {
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                  <DollarSign className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-slate-900">${stats.captured.toLocaleString()}</p>
-                  <p className="text-sm text-slate-500">Capturado total</p>
-                </div>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                <Clock className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">{pendingWithReceipt.length}</p>
+                <p className="text-sm text-slate-500">Listos para revisar</p>
               </div>
             </CardContent>
           </Card>
-
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-yellow-100 flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-yellow-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-slate-900">${stats.pendingCapture.toLocaleString()}</p>
-                  <p className="text-sm text-slate-500">Pendiente captura</p>
-                </div>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
+                <AlertCircle className="w-5 h-5 text-slate-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">
+                  {bookings.filter(b => b.payment_status === 'pending' && !b.receipt_url && b.status !== 'cancelled').length}
+                </p>
+                <p className="text-sm text-slate-500">Sin comprobante</p>
               </div>
             </CardContent>
           </Card>
-
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
-                  <AlertCircle className="w-5 h-5 text-red-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-slate-900">{stats.disputed}</p>
-                  <p className="text-sm text-slate-500">Disputas activas</p>
-                </div>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">
+                  {bookings.filter(b => b.payment_status === 'paid').length}
+                </p>
+                <p className="text-sm text-slate-500">Aprobados</p>
               </div>
             </CardContent>
           </Card>
-
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <CreditCard className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-slate-900">{payments.length}</p>
-                  <p className="text-sm text-slate-500">Total transacciones</p>
-                </div>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                <DollarSign className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">
+                  ${bookings.filter(b => b.payment_status === 'paid').reduce((s, b) => s + (b.total_price || 0), 0).toLocaleString()}
+                </p>
+                <p className="text-sm text-slate-500">Total aprobado</p>
               </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Tabs */}
-        <Tabs value={filter} onValueChange={setFilter} className="mb-6">
+        <Tabs value={filter} onValueChange={setFilter} className="mb-4">
           <TabsList className="bg-white">
             <TabsTrigger value="pending">
-              Pendientes ({payments.filter(p => ['preauthorized', 'pending_capture'].includes(p.status)).length})
+              Pendientes ({bookings.filter(b => b.payment_status === 'pending' && b.status !== 'cancelled').length})
             </TabsTrigger>
-            <TabsTrigger value="disputed">
-              Disputados ({payments.filter(p => p.dispute_flag).length})
+            <TabsTrigger value="paid">
+              Aprobados ({bookings.filter(b => b.payment_status === 'paid').length})
             </TabsTrigger>
-            <TabsTrigger value="captured">
-              Capturados ({payments.filter(p => p.status === 'captured').length})
-            </TabsTrigger>
-            <TabsTrigger value="refunded">
-              Reembolsados ({payments.filter(p => p.status === 'refunded').length})
+            <TabsTrigger value="rejected">
+              Rechazados ({bookings.filter(b => b.payment_status === 'cancelled').length})
             </TabsTrigger>
             <TabsTrigger value="all">Todos</TabsTrigger>
           </TabsList>
         </Tabs>
 
-        {/* Payments Table */}
-        <Card>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-50 border-b">
-                  <tr>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-slate-500">ID Viaje</th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-slate-500">Monto</th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-slate-500">Comisión</th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-slate-500">Conductor</th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-slate-500">Estado</th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-slate-500">Fecha</th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-slate-500">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {filteredPayments.map((payment) => (
-                    <tr key={payment.id} className="hover:bg-slate-50">
-                      <td className="px-4 py-3">
-                        <p className="font-mono text-sm text-slate-700">
-                          {payment.ride_id?.slice(0, 8)}...
-                        </p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <p className="font-bold text-slate-900">${payment.amount}</p>
-                        <p className="text-xs text-slate-500">
-                          {payment.payment_method_brand} •••• {payment.payment_method_last4}
-                        </p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <p className="text-slate-700">${payment.fee_platform}</p>
-                        <p className="text-xs text-slate-500">{payment.fee_percentage}%</p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <p className="text-green-600 font-medium">${payment.payout_driver}</p>
-                      </td>
-                      <td className="px-4 py-3">
-                        {getStatusBadge(payment)}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-500">
-                        {format(new Date(payment.created_date), "d MMM HH:mm", { locale: es })}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex gap-2">
-                          {['preauthorized', 'pending_capture'].includes(payment.status) && !payment.dispute_flag && (
-                            <Button
-                              size="sm"
-                              onClick={() => openActionDialog(payment, 'capture')}
-                            >
-                              <CheckCircle className="w-4 h-4 mr-1" />
-                              Capturar
-                            </Button>
+        {/* Bookings list */}
+        <div className="space-y-3">
+          {filteredBookings.length === 0 && (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <CreditCard className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                <p className="text-slate-500">No hay pagos en esta categoría</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {filteredBookings.map((booking) => {
+            const route = routesMap[booking.route_id];
+            const referenceCode = booking.id.slice(-8).toUpperCase();
+            return (
+              <Card key={booking.id} className={`${booking.receipt_url && booking.payment_status === 'pending' ? 'border-amber-300 bg-amber-50/30' : ''}`}>
+                <CardContent className="p-4">
+                  <div className="flex flex-col md:flex-row md:items-start gap-4">
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        {getPaymentBadge(booking)}
+                        <span className="font-mono text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded">REF: {referenceCode}</span>
+                        <span className="text-xs text-slate-400">
+                          {format(parseISO(booking.created_date || new Date().toISOString()), "d MMM yyyy HH:mm", { locale: es })}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="flex-1 min-w-0">
+                          {route ? (
+                            <p className="text-sm font-medium text-slate-900 truncate">
+                              {route.origin_poi_name || route.origin_address} → {route.dest_poi_name || route.dest_address}
+                            </p>
+                          ) : (
+                            <p className="text-sm text-slate-400">Ruta no disponible</p>
                           )}
-                          {payment.dispute_flag && (
-                            <>
-                              <Button
-                                size="sm"
-                                onClick={() => openActionDialog(payment, 'capture')}
-                              >
-                                Liberar
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => openActionDialog(payment, 'refund')}
-                              >
-                                Reembolsar
-                              </Button>
-                            </>
-                          )}
-                          {payment.status === 'captured' && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => openActionDialog(payment, 'refund')}
-                            >
-                              Reembolsar
-                            </Button>
-                          )}
+                          <p className="text-xs text-slate-500">
+                            Pasajero: {booking.passenger_name || booking.passenger_id?.slice(0, 8)} · {booking.seats_booked || 1} asiento(s) · {(booking.days_booked || []).join(', ')}
+                          </p>
                         </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-xl font-bold text-slate-900">${booking.total_price}</p>
+                          <p className="text-xs text-slate-400">MXN</p>
+                        </div>
+                      </div>
 
-              {filteredPayments.length === 0 && (
-                <div className="text-center py-12">
-                  <CreditCard className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                  <p className="text-slate-500">No hay pagos en esta categoría</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                      {booking.cancel_reason && (
+                        <p className="text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded-lg">
+                          Motivo rechazo: {booking.cancel_reason}
+                        </p>
+                      )}
+                    </div>
 
-        {/* Action Dialog */}
-        <Dialog open={showDialog} onOpenChange={setShowDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {action === 'capture' && 'Capturar pago'}
-                {action === 'refund' && 'Procesar reembolso'}
-                {action === 'cancel' && 'Cancelar pago'}
-              </DialogTitle>
-              <DialogDescription>
-                {action === 'capture' && 'Se procesará el cargo en la tarjeta del pasajero y se acreditará al conductor.'}
-                {action === 'refund' && 'Se devolverá el monto al pasajero.'}
-              </DialogDescription>
-            </DialogHeader>
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {booking.receipt_url && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => { setSelected(booking); setShowReceiptDialog(true); }}
+                          className="gap-1"
+                        >
+                          <Eye className="w-4 h-4" />
+                          Comprobante
+                        </Button>
+                      )}
 
-            <div className="py-4 space-y-4">
-              {action === 'refund' && (
-                <div>
-                  <Label>Monto a reembolsar (MXN)</Label>
-                  <Input
-                    type="number"
-                    value={refundAmount}
-                    onChange={(e) => setRefundAmount(e.target.value)}
-                    max={selectedPayment?.amount}
-                    className="mt-2"
-                  />
-                  <p className="text-xs text-slate-500 mt-1">
-                    Máximo: ${selectedPayment?.amount}
-                  </p>
-                </div>
-              )}
-
-              <div>
-                <Label>Razón / Notas</Label>
-                <Textarea
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  placeholder="Motivo de la acción..."
-                  className="mt-2"
-                />
-              </div>
-
-              {selectedPayment && (
-                <div className="p-3 bg-slate-50 rounded-lg text-sm">
-                  <p><strong>Monto:</strong> ${selectedPayment.amount}</p>
-                  <p><strong>Comisión plataforma:</strong> ${selectedPayment.fee_platform}</p>
-                  <p><strong>Pago conductor:</strong> ${selectedPayment.payout_driver}</p>
-                </div>
-              )}
-            </div>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowDialog(false)}>
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleAction}
-                disabled={processing}
-                className={action === 'refund' ? 'bg-red-600 hover:bg-red-700' : ''}
-              >
-                {processing ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  'Confirmar'
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+                      {booking.payment_status === 'pending' && booking.status !== 'cancelled' && (
+                        <>
+                          <Button
+                            size="sm"
+                            onClick={() => openApprove(booking)}
+                            className="bg-green-600 hover:bg-green-700 gap-1"
+                            disabled={!booking.receipt_url}
+                            title={!booking.receipt_url ? 'El pasajero aún no subió comprobante' : ''}
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                            Aprobar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => openReject(booking)}
+                            className="gap-1"
+                          >
+                            <X className="w-4 h-4" />
+                            Rechazar
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       </div>
+
+      {/* Receipt viewer */}
+      <Dialog open={showReceiptDialog} onOpenChange={setShowReceiptDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Comprobante de pago</DialogTitle>
+            <DialogDescription>
+              Pasajero: {selected?.passenger_name} · ${selected?.total_price} MXN · REF: {selected?.id?.slice(-8).toUpperCase()}
+            </DialogDescription>
+          </DialogHeader>
+          {selected?.receipt_url && (
+            <div className="mt-2">
+              {selected.receipt_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                <img
+                  src={selected.receipt_url}
+                  alt="Comprobante"
+                  className="w-full rounded-xl border object-contain max-h-[60vh]"
+                />
+              ) : (
+                <a href={selected.receipt_url} target="_blank" rel="noopener noreferrer">
+                  <Button variant="outline" className="w-full">
+                    <Eye className="w-4 h-4 mr-2" />
+                    Ver comprobante (PDF u otro formato)
+                  </Button>
+                </a>
+              )}
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            {selected?.payment_status === 'pending' && selected?.status !== 'cancelled' && (
+              <>
+                <Button
+                  onClick={() => { setShowReceiptDialog(false); openApprove(selected); }}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Aprobar pago
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => { setShowReceiptDialog(false); openReject(selected); }}
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Rechazar
+                </Button>
+              </>
+            )}
+            <Button variant="outline" onClick={() => setShowReceiptDialog(false)}>Cerrar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Approve / Reject dialog */}
+      <Dialog open={showActionDialog} onOpenChange={setShowActionDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className={action === 'approve' ? 'text-green-700' : 'text-red-700'}>
+              {action === 'approve' ? '✅ Aprobar pago' : '❌ Rechazar pago'}
+            </DialogTitle>
+            <DialogDescription>
+              {selected && (
+                <span>
+                  Reserva de <strong>{selected.passenger_name}</strong> · <strong>${selected.total_price} MXN</strong>
+                  {' '}· REF: <code>{selected?.id?.slice(-8).toUpperCase()}</code>
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-3 space-y-4">
+            {action === 'approve' && (
+              <div className="p-4 bg-green-50 rounded-xl border border-green-200 space-y-1 text-sm">
+                <p className="font-semibold text-green-800">Al aprobar:</p>
+                <ul className="text-green-700 space-y-0.5 list-disc list-inside">
+                  <li>La reserva cambiará a "Confirmada"</li>
+                  <li>El pasajero podrá ver su boleto inmediatamente</li>
+                  <li>El conductor recibirá notificación de la reserva confirmada</li>
+                  <li>Se descontará 1 asiento del viaje</li>
+                </ul>
+              </div>
+            )}
+
+            {action === 'reject' && (
+              <div>
+                <Label>Motivo del rechazo <span className="text-red-500">*</span></Label>
+                <Textarea
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder="Ej: Comprobante ilegible, monto incorrecto, referencia no encontrada..."
+                  className="mt-2"
+                  rows={3}
+                />
+                <p className="text-xs text-slate-500 mt-1">Este mensaje se enviará al pasajero.</p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowActionDialog(false)} disabled={processing}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleAction}
+              disabled={processing || (action === 'reject' && !rejectReason.trim())}
+              className={action === 'approve' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}
+            >
+              {processing ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : action === 'approve' ? (
+                <><CheckCircle className="w-4 h-4 mr-2" />Confirmar aprobación</>
+              ) : (
+                <><X className="w-4 h-4 mr-2" />Confirmar rechazo</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

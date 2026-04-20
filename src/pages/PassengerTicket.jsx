@@ -47,7 +47,29 @@ export default function PassengerTicket() {
 
   const dayLabels = { lun: 'Lun', mar: 'Mar', mie: 'Mié', jue: 'Jue', vie: 'Vie', sab: 'Sáb', dom: 'Dom' };
   const isPaid = booking.payment_status === 'paid';
+  const isRejected = booking.payment_status === 'cancelled';
   const boardingCode = booking.id.slice(-6).toUpperCase();
+
+  if (isRejected) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <Card className="max-w-sm w-full border-red-200 bg-red-50">
+          <CardContent className="p-6 text-center">
+            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-3" />
+            <h2 className="font-bold text-red-900 text-lg mb-2">Pago rechazado</h2>
+            <p className="text-red-700 text-sm mb-2">Revisa el motivo y vuelve a subir comprobante.</p>
+            {booking.cancel_reason && (
+              <p className="text-xs bg-red-100 text-red-800 rounded-lg px-3 py-2 mb-4">Motivo: {booking.cancel_reason}</p>
+            )}
+            <div className="space-y-2">
+              <Button className="w-full" onClick={() => navigate(createPageUrl('PaymentInstructions') + `?bookingId=${booking.id}`)}>Volver a pagar</Button>
+              <Button variant="outline" className="w-full" onClick={() => navigate(createPageUrl('MyBookings'))}>Ver mis reservas</Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (!isPaid) {
     return (
@@ -55,8 +77,8 @@ export default function PassengerTicket() {
         <Card className="max-w-sm w-full border-amber-200 bg-amber-50">
           <CardContent className="p-6 text-center">
             <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-3" />
-            <h2 className="font-bold text-amber-900 text-lg mb-2">Pago pendiente</h2>
-            <p className="text-amber-700 text-sm mb-4">Tu boleto estará disponible una vez que el equipo valide tu pago.</p>
+            <h2 className="font-bold text-amber-900 text-lg mb-2">Pago en revisión</h2>
+            <p className="text-amber-700 text-sm mb-4">Tu pago está en revisión por administración. Tu boleto estará disponible una vez que sea aprobado.</p>
             <Button variant="outline" onClick={() => navigate(createPageUrl('MyBookings'))}>Ver mis reservas</Button>
           </CardContent>
         </Card>
