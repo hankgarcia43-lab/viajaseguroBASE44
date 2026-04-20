@@ -5,7 +5,7 @@ import { createPageUrl } from '../utils';
 import { 
   User, Mail, Phone, Star, Car, Shield, 
   ChevronRight, LogOut, Bell, HelpCircle,
-  CreditCard, Loader2, Camera, Edit, UserCheck, AlertTriangle
+  CreditCard, Loader2, Camera, Edit, UserCheck, AlertTriangle, Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,6 +13,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 export default function Profile() {
   const [user, setUser] = useState(null);
@@ -65,6 +70,16 @@ export default function Profile() {
 
   const handleLogout = () => {
     base44.auth.logout();
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      await base44.auth.updateMe({ account_status: 'deletion_requested' });
+      toast.success('Solicitud de eliminación enviada. Tu cuenta será eliminada en 7 días.');
+      base44.auth.logout();
+    } catch (error) {
+      toast.error('Error al procesar la solicitud');
+    }
   };
 
   if (loading) {
@@ -299,12 +314,42 @@ export default function Profile() {
         {/* Logout */}
         <Button
           variant="outline"
-          className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+          className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 mb-3"
           onClick={handleLogout}
         >
           <LogOut className="w-5 h-5 mr-2" />
           Cerrar sesión
         </Button>
+
+        {/* Delete Account */}
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="ghost"
+              className="w-full text-slate-400 hover:text-red-500 hover:bg-red-50 text-sm"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Eliminar cuenta
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Eliminar tu cuenta?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta acción es irreversible. Tu cuenta y todos tus datos serán eliminados permanentemente en un plazo de 7 días. Las reservas activas serán canceladas.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteAccount}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Sí, eliminar mi cuenta
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

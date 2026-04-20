@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from './utils';
 import { 
   Car, User, Menu, X, Home, Clock, Settings, LogOut, 
-  Shield, Bell, ChevronRight, MapPin, Route, Search, Calendar
+  Shield, Bell, ChevronRight, MapPin, Route, Search, Calendar, ArrowLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -16,6 +16,7 @@ export default function Layout({ children, currentPageName }) {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     loadUserData();
@@ -58,6 +59,10 @@ export default function Layout({ children, currentPageName }) {
   // Admin pages
   const adminPages = ['AdminDashboard', 'AdminKYC', 'AdminIncidents', 'AdminPayments', 'AdminConfig'];
   const isAdminPage = adminPages.includes(currentPageName);
+
+  // Child pages that should show back button
+  const childPages = ['RouteDetails', 'Notifications', 'RateRide', 'ReportIncident', 'PassengerTicket', 'PaymentInstructions', 'DriverOnboarding', 'CreateRoute', 'PassengerHistory', 'DriverHistory', 'DriverEarnings', 'AdminKYC', 'AdminIncidents', 'AdminPayments', 'AdminConfig', 'AdminRoutes', 'Soporte'];
+  const isChildPage = childPages.includes(currentPageName);
 
   // Driver pages
   const driverPages = ['DriverDashboard', 'DriverFeed', 'DriverOnboarding', 'DriverEarnings', 'DriverHistory', 'CreateRoute', 'MyRoutes'];
@@ -114,14 +119,24 @@ export default function Layout({ children, currentPageName }) {
       `}</style>
       
       {/* Mobile Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="flex items-center justify-between px-4 h-16">
-          <Link to={createPageUrl('Landing')} className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
-              <Car className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-bold text-lg text-slate-900">Viaja Seguro</span>
-          </Link>
+          {isChildPage ? (
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-2 text-slate-700 hover:text-slate-900 -webkit-tap-highlight-color-transparent"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span className="font-medium">Atrás</span>
+            </button>
+          ) : (
+            <Link to={createPageUrl('Landing')} className="flex items-center gap-2">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
+                <Car className="w-5 h-5 text-white" />
+              </div>
+              <span className="font-bold text-lg text-slate-900">Viaja Seguro</span>
+            </Link>
+          )}
 
           <div className="flex items-center gap-3">
             <Link to={createPageUrl('Notifications')} className="relative">
@@ -205,7 +220,7 @@ export default function Layout({ children, currentPageName }) {
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-t border-slate-200/50 md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-t border-slate-200/50 md:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="flex items-center justify-around h-16">
           {getNavItems().slice(0, 4).map((item) => (
             <Link

@@ -15,6 +15,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { format, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
+import PullToRefresh from '../components/PullToRefresh';
 
 const POI_ICONS = {
   metro: Train,
@@ -147,6 +148,7 @@ export default function SearchRoutes() {
   }
 
   return (
+    <PullToRefresh onRefresh={searchRoutes}>
     <div className="min-h-screen bg-slate-50 pb-24">
       <div className="max-w-2xl mx-auto px-4 pt-6">
         {/* Header */}
@@ -338,9 +340,10 @@ export default function SearchRoutes() {
           </div>
         )}
       </div>
+    </div>
 
-      {/* POI Selection Sheet */}
-      <Sheet open={!!selectingFor} onOpenChange={() => setSelectingFor(null)}>
+        {/* POI Selection Sheet */}
+        <Sheet open={!!selectingFor} onOpenChange={() => setSelectingFor(null)}>
         <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl">
           <SheetHeader>
             <SheetTitle>
@@ -428,7 +431,7 @@ export default function SearchRoutes() {
             </div>
           </div>
         </SheetContent>
-      </Sheet>
-    </div>
+        </Sheet>
+    </PullToRefresh>
   );
 }

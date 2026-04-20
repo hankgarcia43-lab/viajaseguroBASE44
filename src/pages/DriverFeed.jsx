@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { motion } from 'framer-motion';
 import TakeRouteSheet from '../components/driver/TakeRouteSheet';
 import { toast } from 'sonner';
+import PullToRefresh from '../components/PullToRefresh';
 
 export default function DriverFeed() {
   const [user, setUser] = useState(null);
@@ -69,6 +70,7 @@ export default function DriverFeed() {
   }
 
   return (
+    <PullToRefresh onRefresh={loadData}>
     <div className="min-h-screen bg-slate-50 pb-24">
       <div className="max-w-2xl mx-auto px-4 pt-6">
         {/* Header */}
@@ -204,5 +206,6 @@ export default function DriverFeed() {
         />
       )}
     </div>
+    </PullToRefresh>
   );
 }
