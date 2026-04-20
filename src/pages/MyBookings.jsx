@@ -252,14 +252,14 @@ export default function MyBookings() {
                           <div className="flex items-center gap-3">
                             <div className="w-2 h-2 rounded-full bg-blue-500" />
                             <span className="text-sm text-slate-700 flex-1 truncate">
-                              {route.origin_poi_name || route.origin_address}
+                              {route?.origin_poi_name || route?.origin_address || 'Origen'}
                             </span>
-                            <span className="text-sm font-medium text-slate-900">{route.departure_time}</span>
+                            <span className="text-sm font-medium text-slate-900">{route?.departure_time || booking.departure_time}</span>
                           </div>
                           <div className="flex items-center gap-3">
                             <div className="w-2 h-2 rounded-full bg-green-500" />
                             <span className="text-sm text-slate-700 flex-1 truncate">
-                              {route.dest_poi_name || route.dest_address}
+                              {route?.dest_poi_name || route?.dest_address || 'Destino'}
                             </span>
                           </div>
                         </div>
