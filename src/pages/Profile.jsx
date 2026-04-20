@@ -326,8 +326,8 @@ export default function Profile() {
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button
-              variant="ghost"
-              className="w-full text-slate-400 hover:text-red-500 hover:bg-red-50 text-sm"
+              variant="outline"
+              className="w-full text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700 mb-6"
             >
               <Trash2 className="w-4 h-4 mr-2" />
               Eliminar cuenta
