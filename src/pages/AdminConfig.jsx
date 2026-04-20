@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { invalidateConfigCache } from '@/lib/useAppConfig';
+import { calcCommission } from '@/lib/commissionCalc';
 import { 
   Settings, DollarSign, Clock, Percent, MapPin,
-  Save, Loader2, RefreshCw, Zap, Route, Building2
+  Save, Loader2, RefreshCw, Zap, Route, Building2, AlertTriangle, Calculator
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,11 +12,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 
 const DEFAULTS = {
   bank_name: 'BBVA',
-  bank_account_holder: 'Viaja Seguro S.A. de C.V.',
+  bank_account_holder: '',
   bank_clabe: '',
   bank_account_number: '',
   commission_recurring: 10,
@@ -36,51 +39,110 @@ const DEFAULTS = {
 
 export default function AdminConfig() {
   const [config, setConfig] = useState(DEFAULTS);
+  const [originalConfig, setOriginalConfig] = useState(DEFAULTS);
+  const [existingRecords, setExistingRecords] = useState({}); // key -> { id, config_type }
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [configFromDB, setConfigFromDB] = useState(false);
+  // Simulator state
+  const [simGross, setSimGross] = useState(250);
 
   useEffect(() => { loadConfig(); }, []);
 
   const loadConfig = async () => {
+    setLoading(true);
     try {
       const configs = await base44.entities.AppConfig.list();
       const loaded = { ...DEFAULTS };
+      const records = {};
       configs.forEach(c => {
         if (c.config_type === 'number') loaded[c.config_key] = parseFloat(c.config_value);
         else if (c.config_type === 'boolean') loaded[c.config_key] = c.config_value === 'true';
         else loaded[c.config_key] = c.config_value;
+        records[c.config_key] = { id: c.id, config_type: c.config_type };
       });
       setConfig(loaded);
-    } catch { /* use defaults */ }
+      setOriginalConfig(loaded);
+      setExistingRecords(records);
+      setConfigFromDB(configs.length > 0);
+    } catch { /* usar defaults */ }
     finally { setLoading(false); }
   };
 
+  /**
+   * Guardado atómico por clave: actualiza si existe, crea si no.
+   * NUNCA elimina registros existentes → sin riesgo de estado inconsistente.
+   */
   const saveConfig = async () => {
     setSaving(true);
     try {
       const user = await base44.auth.me();
-      const existing = await base44.entities.AppConfig.list();
-      for (const c of existing) await base44.entities.AppConfig.delete(c.id);
+      const changedKeys = [];
+
       for (const [key, value] of Object.entries(config)) {
-        const configType = typeof value === 'boolean' ? 'boolean' : typeof value === 'number' ? 'number' : 'string';
-        const category = key.includes('fare') || key.includes('rate') || key.includes('fee') ? 'pricing' :
-                        key.includes('kyc') || key.includes('ocr') ? 'kyc' :
-                        key.includes('search') || key.includes('driver') || key.includes('radius') ? 'matching' :
-                        key.includes('commission') || key.includes('retention') ? 'payments' : 'general';
-        await base44.entities.AppConfig.create({ config_key: key, config_value: String(value), config_type: configType, category });
+        if (key === '_loadedFromDB') continue;
+        const configType = typeof value === 'boolean' ? 'boolean'
+          : typeof value === 'number' ? 'number' : 'string';
+        const category = key.includes('fare') || key.includes('rate') || key.includes('fee') ? 'pricing'
+          : key.includes('kyc') || key.includes('ocr') ? 'kyc'
+          : key.includes('search') || key.includes('driver') || key.includes('radius') ? 'matching'
+          : key.includes('commission') || key.includes('retention') ? 'payments'
+          : key.includes('bank') ? 'payments'
+          : 'general';
+
+        if (existingRecords[key]) {
+          // Actualizar registro existente
+          await base44.entities.AppConfig.update(existingRecords[key].id, {
+            config_value: String(value),
+            config_type: configType,
+            category,
+          });
+        } else {
+          // Crear nuevo registro
+          const created = await base44.entities.AppConfig.create({
+            config_key: key,
+            config_value: String(value),
+            config_type: configType,
+            category,
+          });
+          setExistingRecords(prev => ({ ...prev, [key]: { id: created.id, config_type: configType } }));
+        }
+
+        if (String(value) !== String(originalConfig[key])) {
+          changedKeys.push({ key, prev: originalConfig[key], next: value });
+        }
       }
-      await base44.entities.AuditLog.create({
-        user_id: user.id, user_email: user.email, action: 'config_change',
-        entity_type: 'AppConfig', details: JSON.stringify(config)
-      });
-      toast.success('Configuración guardada');
-    } catch { toast.error('Error al guardar'); }
-    finally { setSaving(false); }
+
+      // Auditoría: registrar cambios efectivos
+      if (changedKeys.length > 0) {
+        await base44.entities.AuditLog.create({
+          user_id: user.id,
+          user_email: user.email,
+          action: 'config_change',
+          entity_type: 'AppConfig',
+          details: JSON.stringify({ changed: changedKeys, saved_by: user.email }),
+        });
+      }
+
+      // Invalidar cache para que próximas llamadas lean datos frescos
+      invalidateConfigCache();
+      setOriginalConfig({ ...config });
+      setConfigFromDB(true);
+      toast.success(`Configuración guardada${changedKeys.length > 0 ? ` (${changedKeys.length} cambio${changedKeys.length > 1 ? 's' : ''})` : ' (sin cambios)'}`);
+    } catch (e) {
+      console.error(e);
+      toast.error('Error al guardar configuración');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const set = (key, value) => setConfig(prev => ({ ...prev, [key]: value }));
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>;
+
+  const simRecurring = calcCommission(simGross, config.commission_recurring);
+  const simQuick = calcCommission(simGross, config.commission_quick_ride);
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-6">
@@ -98,6 +160,15 @@ export default function AdminConfig() {
             </Button>
           </div>
         </div>
+
+        {!configFromDB && (
+          <Alert className="mb-6 border-amber-300 bg-amber-50">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-800 text-sm">
+              <strong>Aviso:</strong> No se encontró configuración guardada en la base de datos. Se están usando valores predeterminados. Guarda la configuración para que el sistema use estos valores.
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div className="space-y-6">
           {/* Datos bancarios */}
@@ -126,11 +197,11 @@ export default function AdminConfig() {
             </CardContent>
           </Card>
 
-          {/* Comisiones por tipo */}
+          {/* Comisiones */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><Percent className="w-5 h-5 text-indigo-600" />Comisiones por tipo de viaje</CardTitle>
-              <CardDescription>La comisión se descuenta del total cobrado al pasajero antes de liquidar al conductor.</CardDescription>
+              <CardDescription>La comisión se descuenta del monto total cobrado al pasajero antes de liquidar al conductor.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
@@ -141,8 +212,8 @@ export default function AdminConfig() {
                   </div>
                   <span className="text-2xl font-bold text-blue-600">{config.commission_recurring}%</span>
                 </div>
-                <Slider value={[config.commission_recurring]} onValueChange={([v]) => set('commission_recurring', v)} max={30} min={5} step={1} />
-                <p className="text-xs text-slate-500 mt-1">El conductor recibe el {100 - config.commission_recurring}%</p>
+                <Slider value={[config.commission_recurring]} onValueChange={([v]) => set('commission_recurring', v)} max={35} min={0} step={1} />
+                <p className="text-xs text-slate-500 mt-1">El conductor recibe el {100 - config.commission_recurring}% del total</p>
               </div>
               <div>
                 <div className="flex items-center justify-between mb-2">
@@ -152,8 +223,46 @@ export default function AdminConfig() {
                   </div>
                   <span className="text-2xl font-bold text-orange-500">{config.commission_quick_ride}%</span>
                 </div>
-                <Slider value={[config.commission_quick_ride]} onValueChange={([v]) => set('commission_quick_ride', v)} max={35} min={10} step={1} />
-                <p className="text-xs text-slate-500 mt-1">El conductor recibe el {100 - config.commission_quick_ride}%</p>
+                <Slider value={[config.commission_quick_ride]} onValueChange={([v]) => set('commission_quick_ride', v)} max={35} min={0} step={1} />
+                <p className="text-xs text-slate-500 mt-1">El conductor recibe el {100 - config.commission_quick_ride}% del total</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Simulador de comisiones */}
+          <Card className="border-indigo-200 bg-indigo-50/40">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-indigo-700"><Calculator className="w-5 h-5" />Simulador de comisiones</CardTitle>
+              <CardDescription>Previsualizá el resultado con la configuración actual antes de guardar.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-4">
+                <Label>Monto bruto del viaje (MXN)</Label>
+                <Input
+                  type="number"
+                  value={simGross}
+                  onChange={e => setSimGross(parseFloat(e.target.value) || 0)}
+                  className="mt-2 max-w-[160px]"
+                  min={0}
+                />
+              </div>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="bg-white rounded-xl p-4 border border-blue-200">
+                  <p className="text-xs font-semibold text-blue-700 uppercase mb-3 flex items-center gap-1"><Route className="w-3 h-3" />Ruta recurrente ({config.commission_recurring}%)</p>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between text-slate-600"><span>Cobrado al pasajero</span><span className="font-medium">${simRecurring.gross.toFixed(2)}</span></div>
+                    <div className="flex justify-between text-slate-500"><span>Comisión plataforma</span><span>−${simRecurring.platformFee.toFixed(2)}</span></div>
+                    <div className="flex justify-between font-bold text-green-700 pt-1 border-t"><span>Neto conductor</span><span>${simRecurring.driverNet.toFixed(2)}</span></div>
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl p-4 border border-orange-200">
+                  <p className="text-xs font-semibold text-orange-700 uppercase mb-3 flex items-center gap-1"><Zap className="w-3 h-3" />Viaje rápido ({config.commission_quick_ride}%)</p>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between text-slate-600"><span>Cobrado al pasajero</span><span className="font-medium">${simQuick.gross.toFixed(2)}</span></div>
+                    <div className="flex justify-between text-slate-500"><span>Comisión plataforma</span><span>−${simQuick.platformFee.toFixed(2)}</span></div>
+                    <div className="flex justify-between font-bold text-green-700 pt-1 border-t"><span>Neto conductor</span><span>${simQuick.driverNet.toFixed(2)}</span></div>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>

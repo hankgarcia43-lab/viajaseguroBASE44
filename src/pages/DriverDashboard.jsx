@@ -8,6 +8,8 @@ import {
   Star, ChevronRight, AlertCircle, CheckCircle, X,
   Phone, MessageCircle, Loader2, Car, Shield, Route, Plus, Zap
 } from 'lucide-react';
+import { loadAppConfig } from '@/lib/useAppConfig';
+import { calcCommission, getCommissionPct } from '@/lib/commissionCalc';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -298,17 +300,13 @@ export default function DriverDashboard() {
     if (!activeRide) return;
 
     try {
-      const appConfigList = await base44.entities.AppConfig.filter({});
-      const appConfig = {};
-      appConfigList.forEach(c => {
-        appConfig[c.config_key] = c.config_type === 'number' ? parseFloat(c.config_value) : c.config_value;
-      });
-      const commPct = appConfig.commission_quick_ride || 20;
+      const appConfig = await loadAppConfig();
+      const commPct = getCommissionPct(appConfig, 'quick_ride');
+      const retentionMins = typeof appConfig.retention_window_minutes === 'number' ? appConfig.retention_window_minutes : 10;
 
       const fareFinal = activeRide.fare_estimated;
-      const platformFee = Math.round(fareFinal * commPct / 100);
-      const driverPayout = fareFinal - platformFee;
-      const retentionEnds = new Date(Date.now() + (appConfig.retention_window_minutes || 10) * 60 * 1000).toISOString();
+      const { platformFee, driverNet: driverPayout } = calcCommission(fareFinal, commPct);
+      const retentionEnds = new Date(Date.now() + retentionMins * 60 * 1000).toISOString();
 
       await base44.entities.Ride.update(activeRide.id, {
         status: 'completed',

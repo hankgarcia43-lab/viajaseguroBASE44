@@ -7,14 +7,17 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, subDays } from 'date-fns';
+import { format, startOfWeek, eachDayOfInterval, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { loadAppConfig } from '@/lib/useAppConfig';
+import { calcCommission, getCommissionPct } from '@/lib/commissionCalc';
 
 export default function DriverEarnings() {
   const [driver, setDriver] = useState(null);
   const [rides, setRides] = useState([]);
   const [payments, setPayments] = useState([]);
+  const [appConfig, setAppConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('week');
   const [showBankModal, setShowBankModal] = useState(false);
@@ -27,7 +30,8 @@ export default function DriverEarnings() {
 
   const loadData = async () => {
     try {
-      const userData = await base44.auth.me();
+      const [userData, cfg] = await Promise.all([base44.auth.me(), loadAppConfig()]);
+      setAppConfig(cfg);
       const drivers = await base44.entities.Driver.filter({ user_id: userData.id });
       
       if (drivers.length === 0) return;
@@ -35,20 +39,11 @@ export default function DriverEarnings() {
       const driverData = drivers[0];
       setDriver(driverData);
 
-      // Load completed rides
-      const allRides = await base44.entities.Ride.filter(
-        { driver_id: driverData.id, status: 'completed' },
-        '-completed_at',
-        100
-      );
+      const [allRides, allPayments] = await Promise.all([
+        base44.entities.Ride.filter({ driver_id: driverData.id, status: 'completed' }, '-completed_at', 100),
+        base44.entities.Payment.filter({ driver_id: driverData.id }, '-created_date', 100),
+      ]);
       setRides(allRides);
-
-      // Load payments
-      const allPayments = await base44.entities.Payment.filter(
-        { driver_id: driverData.id },
-        '-created_date',
-        100
-      );
       setPayments(allPayments);
 
     } catch (error) {
@@ -78,13 +73,16 @@ export default function DriverEarnings() {
 
     const filteredRides = rides.filter(r => new Date(r.completed_at) >= startDate);
 
-    // Use actual payout from payments if available, else estimate with commission from config
+    // Usar payout real si existe; si no, calcular con comisión dinámica
+    const commPct = getCommissionPct(appConfig, 'quick_ride');
     const paymentsMap = {};
     payments.forEach(p => { paymentsMap[p.ride_id] = p; });
 
     const driverEarnings = filteredRides.reduce((sum, r) => {
       const p = paymentsMap[r.id];
-      return sum + (p ? p.payout_driver : Math.round((r.fare_final || r.fare_estimated || 0) * 0.8));
+      if (p) return sum + (p.payout_driver || 0);
+      const gross = r.fare_final || r.fare_estimated || 0;
+      return sum + calcCommission(gross, commPct).driverNet;
     }, 0);
     const totalFare = filteredRides.reduce((sum, r) => sum + (r.fare_final || r.fare_estimated || 0), 0);
 
@@ -112,7 +110,9 @@ export default function DriverEarnings() {
       });
       const earnings = dayRides.reduce((sum, r) => {
         const p = paymentsMap[r.id];
-        return sum + (p ? p.payout_driver : Math.round((r.fare_final || r.fare_estimated || 0) * 0.8));
+        if (p) return sum + (p.payout_driver || 0);
+        const gross = r.fare_final || r.fare_estimated || 0;
+        return sum + calcCommission(gross, getCommissionPct(appConfig, 'quick_ride')).driverNet;
       }, 0);
       return { day: format(dayStart, 'EEE', { locale: es }), earnings, rides: dayRides.length };
     });
@@ -189,9 +189,9 @@ export default function DriverEarnings() {
             <CardContent className="p-4">
               <div className="flex items-center gap-2 text-slate-500 mb-2">
                 <DollarSign className="w-4 h-4" />
-                <span className="text-sm">Ganancias</span>
+                <span className="text-sm">Ganancia neta</span>
               </div>
-              <p className="text-2xl font-bold text-slate-900">
+              <p className="text-2xl font-bold text-green-700">
                 ${stats.earnings.toLocaleString()}
               </p>
             </CardContent>
@@ -218,9 +218,9 @@ export default function DriverEarnings() {
             <CardContent className="p-4">
               <div className="flex items-center gap-2 text-slate-500 mb-2">
                 <CreditCard className="w-4 h-4" />
-                <span className="text-sm">Comisión plat.</span>
+                <span className="text-sm">Descuento plataforma</span>
               </div>
-              <p className="text-2xl font-bold text-slate-900">${stats.platformFee}</p>
+              <p className="text-2xl font-bold text-slate-900">${stats.platformFee.toLocaleString()}</p>
             </CardContent>
           </Card>
         </div>
