@@ -218,7 +218,6 @@ export default function MyBookings() {
             <AnimatePresence>
               {filteredBookings.map((booking, index) => {
                 const route = routes[booking.route_id];
-                if (!route) return null;
 
                 const tripDate = parseISO(booking.trip_date);
                 const today = new Date().toISOString().split('T')[0];
@@ -268,7 +267,7 @@ export default function MyBookings() {
                         {/* Driver */}
                         <div className="flex items-center gap-3 pt-3 border-t">
                           <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden">
-                            {route.driver_photo ? (
+                            {route?.driver_photo ? (
                               <img src={route.driver_photo} alt="" className="w-full h-full object-cover" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center">
@@ -277,8 +276,8 @@ export default function MyBookings() {
                             )}
                           </div>
                           <div className="flex-1">
-                            <p className="font-medium text-slate-900">{route.driver_name}</p>
-                            <p className="text-sm text-slate-500">{route.vehicle_model} • {route.vehicle_plate}</p>
+                            <p className="font-medium text-slate-900">{route?.driver_name || booking.driver_id}</p>
+                            <p className="text-sm text-slate-500">{route?.vehicle_model} {route?.vehicle_plate ? `• ${route.vehicle_plate}` : ''}</p>
                           </div>
                           <div className="flex flex-col gap-1 items-end">
                             {booking.payment_status === 'paid' && (

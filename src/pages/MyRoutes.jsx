@@ -20,6 +20,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 export default function MyRoutes() {
   const [driver, setDriver] = useState(null);
   const [routes, setRoutes] = useState([]);
+  const [bookingsMap, setBookingsMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [selectedRoute, setSelectedRoute] = useState(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -44,6 +45,20 @@ export default function MyRoutes() {
         50
       );
       setRoutes(myRoutes);
+
+      // Load pending bookings for each route
+      if (myRoutes.length > 0) {
+        const allBookings = await base44.entities.RouteBooking.filter(
+          { driver_id: drivers[0].id },
+          '-created_date',
+          200
+        );
+        const bMap = {};
+        myRoutes.forEach(r => {
+          bMap[r.id] = allBookings.filter(b => b.route_id === r.id && ['pending','confirmed'].includes(b.status));
+        });
+        setBookingsMap(bMap);
+      }
 
     } catch (error) {
       console.error('Error loading routes:', error);
@@ -256,11 +271,18 @@ export default function MyRoutes() {
                             {route.total_trips || 0} viajes
                           </span>
                         </div>
-                        <Badge variant="outline">
-                          {route.days_of_week?.length === 7 ? 'Diario' : 
-                           route.days_of_week?.length === 5 ? 'L-V' :
-                           route.days_of_week?.join(', ')}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          {(bookingsMap[route.id]?.length || 0) > 0 && (
+                            <Badge className="bg-blue-100 text-blue-700">
+                              {bookingsMap[route.id].length} reserva{bookingsMap[route.id].length > 1 ? 's' : ''}
+                            </Badge>
+                          )}
+                          <Badge variant="outline">
+                            {route.days_of_week?.length === 7 ? 'Diario' : 
+                             route.days_of_week?.length === 5 ? 'L-V' :
+                             route.days_of_week?.join(', ')}
+                          </Badge>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>

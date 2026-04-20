@@ -26,6 +26,8 @@ export default function RouteDetails() {
   const [booking, setBooking] = useState(false);
   const [seats, setSeats] = useState(1);
   const [selectedDays, setSelectedDays] = useState([]);
+  const [availableSeats, setAvailableSeats] = useState(null);
+  const [hasExistingBooking, setHasExistingBooking] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -49,8 +51,17 @@ export default function RouteDetails() {
         return;
       }
       setRoute(r);
-      // Default: select all available days
       setSelectedDays(r.days_of_week || []);
+
+      // Calculate available seats (total - booked)
+      const bookings = await base44.entities.RouteBooking.filter({ route_id: routeId });
+      const activeBookings = bookings.filter(b => ['pending','confirmed','in_progress'].includes(b.status));
+      const bookedSeats = activeBookings.reduce((sum, b) => sum + (b.seats_booked || 1), 0);
+      setAvailableSeats(Math.max(0, r.total_seats - bookedSeats));
+
+      // Check if user already has an active booking on this route
+      const myBooking = activeBookings.find(b => b.passenger_id === userData.id);
+      setHasExistingBooking(!!myBooking);
     } catch (e) {
       console.error(e);
     } finally {
@@ -128,7 +139,7 @@ export default function RouteDetails() {
   if (!route) return null;
 
   const { subtotal, discountAmt, total, days, weekly } = calcPricing();
-
+  const seatsLeft = availableSeats ?? route.total_seats;
   const availableDays = route.days_of_week || [];
 
   return (
@@ -289,6 +300,27 @@ export default function RouteDetails() {
           </Card>
         )}
 
+        {/* Seats available */}
+        <div className={`flex items-center gap-2 mb-4 px-3 py-2 rounded-xl text-sm font-medium ${
+          seatsLeft === 0 ? 'bg-red-50 text-red-700' :
+          seatsLeft <= 2 ? 'bg-amber-50 text-amber-700' :
+          'bg-green-50 text-green-700'
+        }`}>
+          <Users className="w-4 h-4" />
+          {seatsLeft === 0 ? 'Sin lugares disponibles' :
+           seatsLeft === 1 ? '¡Solo queda 1 lugar!' :
+           `${seatsLeft} lugares disponibles`}
+        </div>
+
+        {hasExistingBooking && (
+          <Alert className="mb-4 border-blue-200 bg-blue-50">
+            <AlertCircle className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-800 text-sm">
+              Ya tienes una reserva activa en esta ruta.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Payment notice */}
         <Alert className="mb-6 border-amber-200 bg-amber-50">
           <Info className="h-4 w-4 text-amber-600" />
@@ -312,10 +344,10 @@ export default function RouteDetails() {
             </div>
             <Button
               onClick={handleBooking}
-              disabled={booking}
-              className="flex-1 h-14 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 rounded-xl text-base font-bold"
+              disabled={booking || seatsLeft === 0}
+              className="flex-1 h-14 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 rounded-xl text-base font-bold disabled:opacity-60"
             >
-              {booking ? <Loader2 className="w-5 h-5 animate-spin" /> : '✅ Reservar y pagar'}
+              {booking ? <Loader2 className="w-5 h-5 animate-spin" /> : seatsLeft === 0 ? 'Sin lugares' : '✅ Reservar y pagar'}
             </Button>
           </div>
         </motion.div>

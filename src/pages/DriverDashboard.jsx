@@ -147,12 +147,15 @@ export default function DriverDashboard() {
     );
 
     // Load ride details for each request
-    const requestsWithRides = await Promise.all(
-      requests.map(async (req) => {
-        const rides = await base44.entities.Ride.filter({ id: req.ride_id });
-        return { ...req, ride: rides[0] };
-      })
-    );
+    const allRideIds = [...new Set(requests.map(r => r.ride_id))];
+    const allRidesRaw = await base44.entities.Ride.list('-created_date', 100);
+    const ridesMap = {};
+    allRidesRaw.forEach(r => { ridesMap[r.id] = r; });
+
+    const requestsWithRides = requests.map(req => ({
+      ...req,
+      ride: ridesMap[req.ride_id]
+    }));
 
     setPendingRequests(requestsWithRides.filter(r => r.ride && r.ride.status === 'searching'));
   };
