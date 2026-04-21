@@ -89,6 +89,10 @@
       "default": "pending",
       "description": "Estado del pago"
     },
+    "boarding_code": {
+      "type": "string",
+      "description": "C\u00f3digo de abordaje seguro: 6 caracteres alfanum\u00e9ricos aleatorios, may\u00fasculas. Generado al crear la reserva."
+    },
     "receipt_url": {
       "type": "string",
       "description": "URL del comprobante de pago subido por el pasajero"

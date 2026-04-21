@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { generateBoardingCode } from '@/lib/boardingCode';
 
 const ALL_DAYS = ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom'];
 const DAY_LABELS = { lun: 'Lunes', mar: 'Martes', mie: 'Miércoles', jue: 'Jueves', vie: 'Viernes', sab: 'Sábado', dom: 'Domingo' };
@@ -110,6 +111,7 @@ export default function RouteDetails() {
         total_price: total,
         status: 'pending',
         payment_status: 'pending',
+        boarding_code: generateBoardingCode(),
       });
 
       await base44.entities.Notification.create({

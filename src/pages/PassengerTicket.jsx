@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { getBoardingCode } from '@/lib/boardingCode';
 
 export default function PassengerTicket() {
   const [booking, setBooking] = useState(null);
@@ -38,7 +39,7 @@ export default function PassengerTicket() {
   };
 
   const copyCode = () => {
-    navigator.clipboard.writeText(booking?.id?.slice(-6).toUpperCase() || '');
+    navigator.clipboard.writeText(getBoardingCode(booking));
     toast.success('Código copiado');
   };
 
@@ -48,7 +49,8 @@ export default function PassengerTicket() {
   const dayLabels = { lun: 'Lun', mar: 'Mar', mie: 'Mié', jue: 'Jue', vie: 'Vie', sab: 'Sáb', dom: 'Dom' };
   const isPaid = booking.payment_status === 'paid';
   const isRejected = booking.payment_status === 'cancelled';
-  const boardingCode = booking.id.slice(-6).toUpperCase();
+  // Usar boarding_code persistido en DB; fallback para bookings legacy sin el campo
+  const boardingCode = getBoardingCode(booking);
 
   if (isRejected) {
     return (

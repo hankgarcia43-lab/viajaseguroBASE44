@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { loadAppConfig } from '@/lib/useAppConfig';
+import { getBoardingCode } from '@/lib/boardingCode';
 
 export default function DriverActiveRides() {
   const [driver, setDriver] = useState(null);
@@ -50,7 +51,8 @@ export default function DriverActiveRides() {
   };
 
   const validateBoarding = async (booking) => {
-    const expected = booking.id.slice(-6).toUpperCase();
+    // Usar boarding_code persistido; fallback legacy para bookings viejos sin el campo
+    const expected = getBoardingCode(booking);
     const entered = (boardingCodes[booking.id] || '').trim().toUpperCase();
     if (entered.length < 6) {
       toast.error('Ingresa el código de 6 caracteres del pasajero.');

@@ -25,6 +25,7 @@ export default function DriverQuickRequests() {
   const [driver, setDriver] = useState(null);
   const [user, setUser] = useState(null);
   const [rides, setRides] = useState([]);
+  const [ridesNoCoords, setRidesNoCoords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [radius, setRadius] = useState(10);
   const [processing, setProcessing] = useState(null);
@@ -48,32 +49,40 @@ export default function DriverQuickRequests() {
   const fetchNearbyRides = async (d, r) => {
     try {
       const allRides = await base44.entities.Ride.filter({ status: 'searching' }, '-created_date', 50);
-      // Filtrar: no asignados
       const unassigned = allRides.filter(ride => !ride.driver_id || ride.driver_id === '');
 
-      // Filtrar por distancia Haversine si el conductor tiene lat/lng válidos
       const driverLat = d?.current_location_lat;
       const driverLng = d?.current_location_lng;
-      const hasLocation = typeof driverLat === 'number' && typeof driverLng === 'number';
+      const hasDriverLocation = typeof driverLat === 'number' && typeof driverLng === 'number';
 
-      const nearby = unassigned
-        .map(ride => {
-          if (!hasLocation || typeof ride.origin_lat !== 'number' || typeof ride.origin_lng !== 'number') {
-            return { ...ride, _distKm: null }; // sin coords: incluir con distancia desconocida
-          }
+      if (!hasDriverLocation) {
+        // Sin ubicación del conductor: mostrar todos sin filtro de distancia
+        setRides(unassigned.map(ride => ({ ...ride, _distKm: null })));
+        setRidesNoCoords([]);
+        return;
+      }
+
+      // Con ubicación del conductor: separar rides con y sin coordenadas
+      const withCoords = [];
+      const noCoords = [];
+
+      unassigned.forEach(ride => {
+        if (typeof ride.origin_lat === 'number' && typeof ride.origin_lng === 'number') {
           const dist = haversineKm(driverLat, driverLng, ride.origin_lat, ride.origin_lng);
-          return { ...ride, _distKm: dist };
-        })
-        .filter(ride => ride._distKm === null || ride._distKm <= r)
-        .sort((a, b) => {
-          if (a._distKm === null && b._distKm === null) return 0;
-          if (a._distKm === null) return 1;
-          if (b._distKm === null) return -1;
-          return a._distKm - b._distKm;
-        });
+          withCoords.push({ ...ride, _distKm: dist });
+        } else {
+          noCoords.push({ ...ride, _distKm: null });
+        }
+      });
 
-      setRides(nearby);
-    } catch { setRides([]); }
+      // Solo incluir en resultados principales los que están dentro del radio real
+      const inRadius = withCoords
+        .filter(ride => ride._distKm <= r)
+        .sort((a, b) => a._distKm - b._distKm);
+
+      setRides(inRadius);
+      setRidesNoCoords(noCoords); // sección separada, no mezclada
+    } catch { setRides([]); setRidesNoCoords([]); }
   };
 
   const handleAccept = async (ride) => {
@@ -158,13 +167,13 @@ export default function DriverQuickRequests() {
           </CardContent>
         </Card>
 
-        {/* Rides list */}
+        {/* Rides list — solo rides dentro del radio real */}
         {rides.length === 0 ? (
           <Card>
             <CardContent className="p-12 text-center">
               <Zap className="w-12 h-12 text-slate-200 mx-auto mb-3" />
-              <p className="font-semibold text-slate-700">Sin viajes rápidos ahora</p>
-              <p className="text-sm text-slate-400 mt-1 mb-4">No hay solicitudes en {radius} km. Amplía el radio o vuelve a intentarlo.</p>
+              <p className="font-semibold text-slate-700">Sin solicitudes dentro de {radius} km</p>
+              <p className="text-sm text-slate-400 mt-1 mb-4">No hay viajes disponibles en ese radio. Puedes ampliar la búsqueda.</p>
               <Button variant="outline" size="sm" onClick={() => setRadius(r => Math.min(50, r + 10))}>
                 Ampliar a {Math.min(50, radius + 10)} km
               </Button>
@@ -172,7 +181,7 @@ export default function DriverQuickRequests() {
           </Card>
         ) : (
           <div className="space-y-3">
-            <p className="text-sm text-slate-500">{rides.length} solicitud(es) disponibles</p>
+            <p className="text-sm text-slate-500 font-medium">{rides.length} solicitud(es) dentro de {radius} km</p>
             <AnimatePresence>
               {rides.map(ride => (
                 <motion.div key={ride.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -20 }}>
@@ -181,11 +190,7 @@ export default function DriverQuickRequests() {
                       <div className="flex items-start justify-between mb-3">
                         <div>
                           <p className="font-bold text-slate-900 text-lg">${ride.fare_estimated} MXN</p>
-                          <p className="text-slate-500 text-sm">
-                            {ride._distKm !== null && ride._distKm !== undefined
-                              ? `${ride._distKm.toFixed(1)} km de ti`
-                              : ride.distance_km ? `${ride.distance_km} km de ruta` : 'Distancia desconocida'}
-                          </p>
+                          <p className="text-blue-600 text-sm font-medium">{ride._distKm.toFixed(1)} km de ti</p>
                         </div>
                         <div className="flex items-center gap-1 text-slate-500 text-xs">
                           <Clock className="w-3.5 h-3.5" />
@@ -234,6 +239,43 @@ export default function DriverQuickRequests() {
                 </motion.div>
               ))}
             </AnimatePresence>
+          </div>
+        )}
+
+        {/* Sección separada: solicitudes sin ubicación exacta (no mezcladas en resultados por radio) */}
+        {ridesNoCoords.length > 0 && (
+          <div className="mt-6">
+            <div className="flex items-center gap-2 mb-3">
+              <MapPin className="w-4 h-4 text-slate-400" />
+              <p className="text-sm text-slate-500 font-medium">{ridesNoCoords.length} solicitud(es) sin ubicación exacta</p>
+            </div>
+            <div className="space-y-3">
+              {ridesNoCoords.map(ride => (
+                <Card key={ride.id} className="border-slate-200 bg-slate-50 opacity-80">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <p className="font-bold text-slate-700">${ride.fare_estimated} MXN</p>
+                        <p className="text-slate-400 text-xs">Sin coordenadas — distancia no calculable</p>
+                      </div>
+                    </div>
+                    <div className="space-y-1 mb-3">
+                      <p className="text-sm text-slate-600 truncate">{ride.origin_address}</p>
+                      <p className="text-sm text-slate-600 truncate">→ {ride.dest_address}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" className="flex-1 border-red-200 text-red-600 hover:bg-red-50" onClick={() => handleReject(ride)} disabled={processing === ride.id}>
+                        <XCircle className="w-3.5 h-3.5 mr-1" /> Pasar
+                      </Button>
+                      <Button size="sm" className="flex-1 bg-slate-600 hover:bg-slate-700" onClick={() => handleAccept(ride)} disabled={processing === ride.id}>
+                        {processing === ride.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5 mr-1" />}
+                        Aceptar
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         )}
       </div>

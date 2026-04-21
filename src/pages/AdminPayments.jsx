@@ -81,6 +81,91 @@ export default function AdminPayments() {
     setShowActionDialog(true);
   };
 
+  /**
+   * Aprobación atómica con bloqueo lógico de asientos.
+   * Garantiza idempotencia y previene sobreventa ante aprobaciones concurrentes.
+   */
+  const approveBookingWithSeatLock = async (bookingSnapshot, adminUser) => {
+    const route = routesMap[bookingSnapshot.route_id];
+
+    // 1. Recargar booking desde DB para obtener estado actual (anti-race condition)
+    const freshBookings = await base44.entities.RouteBooking.filter({ id: bookingSnapshot.id });
+    if (!freshBookings.length) throw new Error('Reserva no encontrada.');
+    const fresh = freshBookings[0];
+
+    // 2. Idempotencia: si ya está aprobado, responder éxito controlado sin duplicar efectos
+    if (fresh.payment_status === 'paid') {
+      toast.info('Este pago ya fue aprobado anteriormente. No se realizaron cambios.');
+      return;
+    }
+
+    // 3. Verificar disponibilidad de asientos con datos frescos de DB
+    if (route) {
+      const currentBookings = await base44.entities.RouteBooking.filter({ route_id: fresh.route_id });
+      const alreadyBooked = currentBookings
+        .filter(b => b.id !== fresh.id && ['confirmed', 'in_progress'].includes(b.status))
+        .reduce((sum, b) => sum + (b.seats_booked || 1), 0);
+      const available = (route.total_seats || 0) - alreadyBooked;
+
+      if (available < (fresh.seats_booked || 1)) {
+        throw new Error(`Sin lugares disponibles. La ruta tiene ${available} asiento(s) libre(s) y esta reserva requiere ${fresh.seats_booked || 1}. No fue posible aprobar este pago.`);
+      }
+    }
+
+    // 4. Aprobar: actualizar estado en DB (única escritura de aprobación)
+    await base44.entities.RouteBooking.update(fresh.id, {
+      status: 'confirmed',
+      payment_status: 'paid',
+      payment_approved_by: adminUser.email,
+      payment_approved_at: new Date().toISOString(),
+    });
+
+    // 5. Notificar al pasajero
+    await base44.entities.Notification.create({
+      user_id: fresh.passenger_id,
+      type: 'payment',
+      title: '¡Pago aprobado!',
+      message: 'Tu pago fue validado. Tu boleto ya está disponible.',
+      data: JSON.stringify({ booking_id: fresh.id }),
+      ride_id: fresh.route_id,
+    });
+
+    // 6. Notificar al conductor con user_id correcto
+    if (route) {
+      const bookingsAfter = await base44.entities.RouteBooking.filter({ route_id: fresh.route_id });
+      const bookedAfter = bookingsAfter
+        .filter(b => ['confirmed', 'in_progress'].includes(b.status))
+        .reduce((sum, b) => sum + (b.seats_booked || 1), 0);
+      const remaining = Math.max(0, (route.total_seats || 0) - bookedAfter);
+
+      let driverUserId = route.driver_id;
+      try {
+        const driverRecords = await base44.entities.Driver.filter({ id: route.driver_id });
+        if (driverRecords.length > 0 && driverRecords[0].user_id) {
+          driverUserId = driverRecords[0].user_id;
+        }
+      } catch { /* fallback a driver_id */ }
+
+      await base44.entities.Notification.create({
+        user_id: driverUserId,
+        type: 'payment',
+        title: '¡Nueva reserva confirmada!',
+        message: `Reserva pagada: ${fresh.seats_booked || 1} asiento(s) · ${route.origin_poi_name || route.origin_address} → ${route.dest_poi_name || route.dest_address}. Quedan ${remaining} lugar(es) disponibles.`,
+        data: JSON.stringify({ booking_id: fresh.id, route_id: fresh.route_id }),
+      });
+    }
+
+    // 7. Auditoría
+    await base44.entities.AuditLog.create({
+      user_id: adminUser.id,
+      user_email: adminUser.email,
+      action: 'payment_capture',
+      entity_type: 'RouteBooking',
+      entity_id: fresh.id,
+      details: JSON.stringify({ approved_by: adminUser.email, booking_id: fresh.id, amount: fresh.total_price }),
+    });
+  };
+
   const handleAction = async () => {
     if (!selected || !user) return;
     if (action === 'reject' && !rejectReason.trim()) {
@@ -90,80 +175,8 @@ export default function AdminPayments() {
 
     setProcessing(true);
     try {
-      const route = routesMap[selected.route_id];
-
       if (action === 'approve') {
-        // Guard: already paid
-        if (selected.payment_status === 'paid') {
-          toast.error('Este pago ya fue aprobado anteriormente');
-          return;
-        }
-
-        // Guard: check seat availability
-        if (route) {
-          const activeBookings = await base44.entities.RouteBooking.filter({ route_id: selected.route_id });
-          const alreadyBooked = activeBookings.filter(b => 
-            b.id !== selected.id && ['confirmed', 'in_progress'].includes(b.status)
-          ).reduce((sum, b) => sum + (b.seats_booked || 1), 0);
-          const available = (route.total_seats || 0) - alreadyBooked;
-          if (available < (selected.seats_booked || 1)) {
-            toast.error(`Sin lugares disponibles. Solo quedan ${available} asiento(s).`);
-            return;
-          }
-        }
-
-        // Approve: update booking
-        await base44.entities.RouteBooking.update(selected.id, {
-          status: 'confirmed',
-          payment_status: 'paid',
-        });
-
-        // Notify passenger
-        await base44.entities.Notification.create({
-          user_id: selected.passenger_id,
-          type: 'payment',
-          title: '¡Pago aprobado!',
-          message: 'Pago aprobado. Tu boleto ya está disponible.',
-          data: JSON.stringify({ booking_id: selected.id }),
-          ride_id: selected.route_id,
-        });
-
-        // Notify driver — buscar user_id del conductor para notificación correcta
-        if (route) {
-          const activeBookingsAfter = await base44.entities.RouteBooking.filter({ route_id: selected.route_id });
-          const bookedSeats = activeBookingsAfter.filter(b =>
-            ['confirmed', 'in_progress'].includes(b.status)
-          ).reduce((sum, b) => sum + (b.seats_booked || 1), 0);
-          const remaining = Math.max(0, (route.total_seats || 0) - bookedSeats);
-
-          // Obtener user_id del conductor para notificación
-          let driverUserId = route.driver_id;
-          try {
-            const driverRecords = await base44.entities.Driver.filter({ id: route.driver_id });
-            if (driverRecords.length > 0 && driverRecords[0].user_id) {
-              driverUserId = driverRecords[0].user_id;
-            }
-          } catch { /* usar driver_id como fallback */ }
-
-          await base44.entities.Notification.create({
-            user_id: driverUserId,
-            type: 'payment',
-            title: '¡Nueva reserva confirmada!',
-            message: `Se reservó y pagó ${selected.seats_booked || 1} asiento(s) en tu ruta ${route.origin_poi_name || route.origin_address} → ${route.dest_poi_name || route.dest_address}. Quedan ${remaining} lugar(es) disponibles.`,
-            data: JSON.stringify({ booking_id: selected.id, route_id: selected.route_id }),
-          });
-        }
-
-        // Audit log
-        await base44.entities.AuditLog.create({
-          user_id: user.id,
-          user_email: user.email,
-          action: 'payment_capture',
-          entity_type: 'RouteBooking',
-          entity_id: selected.id,
-          details: JSON.stringify({ approved_by: user.email, booking_id: selected.id, amount: selected.total_price }),
-        });
-
+        await approveBookingWithSeatLock(selected, user);
         toast.success('Pago aprobado. El conductor fue notificado de la reserva confirmada.');
 
       } else if (action === 'reject') {
@@ -199,7 +212,7 @@ export default function AdminPayments() {
       setSelected(null);
 
     } catch (e) {
-      toast.error('Error al procesar la acción');
+      toast.error(e.message || 'Error al procesar la acción');
       console.error(e);
     } finally {
       setProcessing(false);
