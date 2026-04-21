@@ -114,8 +114,8 @@ export default function Soporte() {
           <CardContent className="p-4 flex gap-3">
             <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-blue-900">Respuesta en 24 horas hábiles</p>
-              <p className="text-xs text-blue-700 mt-0.5">Para emergencias de seguridad, usa la opción 🚨 Seguridad. La atendemos con prioridad alta.</p>
+              <p className="text-sm font-medium text-blue-900">Respondemos en máximo 24 horas hábiles</p>
+              <p className="text-xs text-blue-700 mt-0.5">Para problemas de seguridad activa, elige la categoría 🚨 Seguridad. Se atiende con prioridad alta.</p>
             </div>
           </CardContent>
         </Card>
@@ -202,7 +202,8 @@ export default function Soporte() {
             <Card>
               <CardContent className="p-10 text-center">
                 <CheckCircle className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-                <p className="text-slate-500">Sin reportes previos</p>
+                <p className="text-slate-600 font-medium">Sin reportes anteriores</p>
+                <p className="text-sm text-slate-400 mt-1">¡Todo tranquilo por aquí!</p>
               </CardContent>
             </Card>
           ) : (

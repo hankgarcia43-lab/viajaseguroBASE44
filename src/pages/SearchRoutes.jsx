@@ -230,8 +230,8 @@ export default function SearchRoutes() {
 
         {/* Results */}
         <div className="flex items-center justify-between mb-4">
-          <p className="text-slate-600">
-            {searching ? 'Buscando...' : `${routes.length} rutas encontradas`}
+          <p className="text-slate-600 text-sm font-medium">
+            {searching ? 'Buscando rutas...' : routes.length === 0 ? 'Sin resultados' : `${routes.length} ruta${routes.length !== 1 ? 's' : ''} disponible${routes.length !== 1 ? 's' : ''}`}
           </p>
         </div>
 
@@ -243,8 +243,9 @@ export default function SearchRoutes() {
           <Card>
             <CardContent className="p-12 text-center">
               <MapPin className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-              <h3 className="font-semibold text-slate-900 mb-2">No hay rutas disponibles</h3>
-              <p className="text-slate-500">Intenta con otros filtros o fechas</p>
+              <h3 className="font-semibold text-slate-900 mb-2">Aún no hay rutas en esta zona</h3>
+              <p className="text-slate-500 mb-2">Prueba con otro origen, destino o fecha.</p>
+              <p className="text-xs text-slate-400">Si ves este mensaje frecuentemente, escríbenos por soporte.</p>
             </CardContent>
           </Card>
         ) : (
@@ -326,11 +327,14 @@ export default function SearchRoutes() {
                               </Badge>
                             )}
                           </div>
-                          <Badge className="bg-blue-100 text-blue-700 whitespace-nowrap">
-                            {route.days_of_week?.length === 7 ? 'Diario' : 
-                             route.days_of_week?.length === 5 ? 'L-V' :
-                             route.days_of_week?.slice(0, 2).join(', ')}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge className="bg-blue-100 text-blue-700 whitespace-nowrap">
+                              {route.days_of_week?.length === 7 ? 'Diario' : 
+                               route.days_of_week?.length === 5 ? 'Lun–Vie' :
+                               route.days_of_week?.slice(0, 2).join(', ')}
+                            </Badge>
+                            <span className="text-xs text-blue-600 font-semibold">Ver →</span>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>

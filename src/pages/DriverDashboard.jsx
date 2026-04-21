@@ -543,8 +543,8 @@ export default function DriverDashboard() {
                   <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-4">
                     <Car className="w-8 h-8 text-blue-600" />
                   </div>
-                  <h3 className="text-lg font-bold text-slate-900 mb-2">Esperando viajes</h3>
-                  <p className="text-slate-500 text-sm">Te notificaremos cuando haya una solicitud</p>
+                  <h3 className="text-lg font-bold text-slate-900 mb-2">En espera de solicitudes</h3>
+                  <p className="text-slate-500 text-sm">Te avisaremos en cuanto llegue una solicitud de viaje.</p>
                 </div>
               )}
 
@@ -555,7 +555,7 @@ export default function DriverDashboard() {
                     <Power className="w-10 h-10 text-slate-400" />
                   </div>
                   <h3 className="text-lg font-bold text-slate-900 mb-2">Estás desconectado</h3>
-                  <p className="text-slate-500">Activa tu disponibilidad para recibir viajes</p>
+                  <p className="text-slate-500">Activa el interruptor de arriba para recibir solicitudes de viaje.</p>
                 </div>
               )}
             </motion.div>

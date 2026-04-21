@@ -164,10 +164,11 @@ export default function MyRoutes() {
           <Card>
             <CardContent className="p-12 text-center">
               <MapPin className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-              <h3 className="font-semibold text-slate-900 mb-2">Sin rutas publicadas</h3>
-              <p className="text-slate-500 mb-6">Crea tu primera ruta y empieza a generar ingresos</p>
+              <h3 className="font-semibold text-slate-900 mb-2">Aún no has publicado rutas</h3>
+              <p className="text-slate-500 mb-2">Publica tu primera ruta en minutos y empieza a recibir pasajeros.</p>
+              <p className="text-xs text-slate-400 mb-6">Solo necesitas definir origen, destino, horario y precio.</p>
               <Link to={createPageUrl('CreateRoute')}>
-                <Button>
+                <Button className="bg-gradient-to-r from-blue-600 to-indigo-600">
                   <Plus className="w-4 h-4 mr-2" />
                   Crear mi primera ruta
                 </Button>

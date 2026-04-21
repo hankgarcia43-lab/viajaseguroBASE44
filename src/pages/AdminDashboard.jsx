@@ -99,6 +99,17 @@ export default function AdminDashboard() {
     }
   };
 
+  const STATUS_LABELS = {
+    completed: 'Completado',
+    cancelled: 'Cancelado',
+    in_progress: 'En curso',
+    assigned: 'Asignado',
+    searching: 'Buscando',
+    disputed: 'Disputado',
+    pending: 'Pendiente',
+    confirmed: 'Confirmado',
+  };
+
   const getStatusColor = (status) => {
     const colors = {
       completed: 'bg-green-100 text-green-700',
@@ -106,7 +117,9 @@ export default function AdminDashboard() {
       in_progress: 'bg-blue-100 text-blue-700',
       assigned: 'bg-yellow-100 text-yellow-700',
       searching: 'bg-purple-100 text-purple-700',
-      disputed: 'bg-orange-100 text-orange-700'
+      disputed: 'bg-orange-100 text-orange-700',
+      pending: 'bg-slate-100 text-slate-600',
+      confirmed: 'bg-green-100 text-green-700',
     };
     return colors[status] || 'bg-slate-100 text-slate-700';
   };
@@ -127,8 +140,8 @@ export default function AdminDashboard() {
             <h1 className="text-2xl font-bold text-slate-900">Panel de administración</h1>
             <p className="text-slate-500">Vista general del sistema</p>
           </div>
-          <Badge className="bg-green-100 text-green-700 py-1 px-3">
-            <Activity className="w-4 h-4 mr-1 inline" />
+          <Badge className="bg-green-100 text-green-700 py-1 px-3 text-xs">
+            <Activity className="w-3.5 h-3.5 mr-1 inline" />
             Sistema activo
           </Badge>
         </div>
@@ -318,7 +331,7 @@ export default function AdminDashboard() {
                       </td>
                       <td className="px-4 py-3">
                         <Badge className={getStatusColor(ride.status)}>
-                          {ride.status}
+                          {STATUS_LABELS[ride.status] || ride.status}
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-500">

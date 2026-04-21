@@ -164,7 +164,7 @@ export default function DriverActiveRides() {
         {/* Confirmed bookings pending boarding */}
         {bookings.length > 0 && (
           <div>
-            <h2 className="font-semibold text-slate-700 mb-3 text-sm uppercase tracking-wide">Pasajeros confirmados — Validar abordaje</h2>
+            <h2 className="font-semibold text-slate-700 mb-3 text-sm uppercase tracking-wide">Pasajeros listos — Pide su código de abordaje</h2>
             <div className="space-y-3">
               {bookings.map(b => (
                 <motion.div key={b.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
@@ -210,17 +210,27 @@ export default function DriverActiveRides() {
           <Card>
             <CardContent className="p-12 text-center">
               <Car className="w-12 h-12 text-slate-200 mx-auto mb-3" />
-              <p className="font-semibold text-slate-700">Sin viajes activos</p>
-              <p className="text-sm text-slate-400 mt-1">Los viajes confirmados aparecerán aquí</p>
+              <p className="font-semibold text-slate-700">No tienes viajes activos por ahora</p>
+              <p className="text-sm text-slate-400 mt-1">Cuando un pasajero confirme su reserva, aparecerá aquí para validar el abordaje.</p>
             </CardContent>
           </Card>
         )}
 
+        {/* Safety tips */}
+        <div className="mt-6 p-4 bg-amber-50 rounded-xl border border-amber-100">
+          <p className="text-xs font-semibold text-amber-800 mb-1">🛡️ Recuerda antes de salir</p>
+          <ul className="text-xs text-amber-700 space-y-1 list-disc list-inside">
+            <li>Usa puntos de abordaje visibles y públicos.</li>
+            <li>Verifica que el pasajero coincida con los datos de la reserva.</li>
+            <li>Comparte tu ruta con un contacto de confianza.</li>
+          </ul>
+        </div>
+
         {/* Emergency */}
-        <div className="mt-6">
+        <div className="mt-3">
           <a href="tel:911">
             <Button variant="outline" size="sm" className="w-full text-red-600 border-red-200 hover:bg-red-50">
-              <Phone className="w-3.5 h-3.5 mr-2" /> Emergencias — 911
+              <Phone className="w-3.5 h-3.5 mr-2" /> Emergencias — llama al 911
             </Button>
           </a>
         </div>

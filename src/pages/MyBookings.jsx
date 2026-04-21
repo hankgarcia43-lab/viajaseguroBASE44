@@ -150,7 +150,7 @@ export default function MyBookings() {
       setSelectedBooking(null);
 
     } catch (error) {
-      toast.error('Error al cancelar');
+    toast.error('No pudimos cancelar la reserva. Intenta de nuevo en unos segundos.');
     } finally {
       setCancelling(false);
     }
@@ -206,11 +206,19 @@ export default function MyBookings() {
           <Card>
             <CardContent className="p-12 text-center">
               <Calendar className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-              <h3 className="font-semibold text-slate-900 mb-2">Sin reservas</h3>
-              <p className="text-slate-500 mb-6">Aún no tienes reservas en esta categoría</p>
-              <Link to={createPageUrl('SearchRoutes')}>
-                <Button>Buscar rutas</Button>
-              </Link>
+              <h3 className="font-semibold text-slate-900 mb-2">
+                {filter === 'upcoming' ? 'No tienes viajes próximos' :
+                 filter === 'completed' ? 'Sin viajes completados aún' :
+                 'Sin cancelaciones registradas'}
+              </h3>
+              <p className="text-slate-500 mb-6">
+                {filter === 'upcoming' ? 'Busca una ruta y reserva tu lugar.' : 'Aquí aparecerán tus viajes una vez que viajes.'}
+              </p>
+              {filter === 'upcoming' && (
+                <Link to={createPageUrl('SearchRoutes')}>
+                  <Button className="bg-gradient-to-r from-blue-600 to-indigo-600">Buscar rutas disponibles</Button>
+                </Link>
+              )}
             </CardContent>
           </Card>
         ) : (

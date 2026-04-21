@@ -125,7 +125,7 @@ export default function RouteDetails() {
       toast.success('Reserva creada. Ahora realiza el pago para confirmar tu lugar.');
       navigate(createPageUrl('PaymentInstructions') + `?bookingId=${newBooking.id}`);
     } catch (e) {
-      toast.error('Error al crear la reserva');
+      toast.error('No pudimos crear tu reserva. Intenta de nuevo en unos segundos.');
       console.error(e);
     } finally {
       setBooking(false);
@@ -323,11 +323,19 @@ export default function RouteDetails() {
           </Alert>
         )}
 
+        {/* Safety tip */}
+        <Alert className="mb-4 border-blue-200 bg-blue-50">
+          <Info className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-blue-800 text-sm">
+            Verifica conductor, vehículo y placa antes de abordar. Comparte tu viaje con un contacto de confianza.
+          </AlertDescription>
+        </Alert>
+
         {/* Payment notice */}
         <Alert className="mb-6 border-amber-200 bg-amber-50">
           <Info className="h-4 w-4 text-amber-600" />
           <AlertDescription className="text-amber-800 text-sm">
-            Al reservar recibirás el enlace de pago de Mercado Pago. Tu lugar se confirma tras validar el pago con el equipo de soporte.
+            Al reservar recibirás las instrucciones de pago. Tu lugar se confirma una vez que el equipo valide tu transferencia.
           </AlertDescription>
         </Alert>
       </div>

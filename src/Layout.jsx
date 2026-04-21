@@ -81,25 +81,24 @@ export default function Layout({ children, currentPageName }) {
   }
 
   const passengerNavItems = [
-    { name: 'Rutas', icon: Search, page: 'SearchRoutes' },
-    { name: 'Viaje rápido', icon: MapPin, page: 'QuickRide' },
-    { name: 'Mis reservas', icon: Calendar, page: 'MyBookings' },
+    { name: 'Buscar', icon: Search, page: 'SearchRoutes' },
+    { name: 'Reservas', icon: Calendar, page: 'MyBookings' },
+    { name: 'Soporte', icon: Bell, page: 'Soporte' },
     { name: 'Perfil', icon: User, page: 'Profile' },
   ];
 
   const driverNavItems = [
-    { name: 'Dashboard', icon: Car, page: 'DriverDashboard' },
-    { name: 'Operación', icon: Route, page: 'DriverActiveRides' },
-    { name: 'Mis rutas', icon: Calendar, page: 'MyRoutes' },
-    { name: 'Ganancias', icon: Bell, page: 'DriverEarnings' },
-    { name: 'Perfil', icon: User, page: 'Profile' },
+    { name: 'Inicio', icon: Car, page: 'DriverDashboard' },
+    { name: 'Mis rutas', icon: Route, page: 'MyRoutes' },
+    { name: 'Operación', icon: MapPin, page: 'DriverActiveRides' },
+    { name: 'Ganancias', icon: Settings, page: 'DriverEarnings' },
   ];
 
   const adminNavItems = [
-    { name: 'Dashboard', icon: Home, page: 'AdminDashboard' },
-    { name: 'KYC', icon: Shield, page: 'AdminKYC' },
-    { name: 'Rutas base', icon: Route, page: 'AdminRoutes' },
-    { name: 'Soporte', icon: Bell, page: 'AdminIncidents' },
+    { name: 'Panel', icon: Home, page: 'AdminDashboard' },
+    { name: 'Verificaciones', icon: Shield, page: 'AdminKYC' },
+    { name: 'Rutas', icon: Route, page: 'AdminRoutes' },
+    { name: 'Incidencias', icon: Bell, page: 'AdminIncidents' },
     { name: 'Pagos', icon: Settings, page: 'AdminPayments' },
   ];
 
