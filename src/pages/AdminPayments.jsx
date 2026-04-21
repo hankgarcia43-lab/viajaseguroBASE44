@@ -128,16 +128,25 @@ export default function AdminPayments() {
           ride_id: selected.route_id,
         });
 
-        // Notify driver
+        // Notify driver — buscar user_id del conductor para notificación correcta
         if (route) {
           const activeBookingsAfter = await base44.entities.RouteBooking.filter({ route_id: selected.route_id });
-          const bookedSeats = activeBookingsAfter.filter(b => 
+          const bookedSeats = activeBookingsAfter.filter(b =>
             ['confirmed', 'in_progress'].includes(b.status)
           ).reduce((sum, b) => sum + (b.seats_booked || 1), 0);
           const remaining = Math.max(0, (route.total_seats || 0) - bookedSeats);
 
+          // Obtener user_id del conductor para notificación
+          let driverUserId = route.driver_id;
+          try {
+            const driverRecords = await base44.entities.Driver.filter({ id: route.driver_id });
+            if (driverRecords.length > 0 && driverRecords[0].user_id) {
+              driverUserId = driverRecords[0].user_id;
+            }
+          } catch { /* usar driver_id como fallback */ }
+
           await base44.entities.Notification.create({
-            user_id: route.driver_id,
+            user_id: driverUserId,
             type: 'payment',
             title: '¡Nueva reserva confirmada!',
             message: `Se reservó y pagó ${selected.seats_booked || 1} asiento(s) en tu ruta ${route.origin_poi_name || route.origin_address} → ${route.dest_poi_name || route.dest_address}. Quedan ${remaining} lugar(es) disponibles.`,

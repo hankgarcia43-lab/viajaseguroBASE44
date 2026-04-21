@@ -11,6 +11,16 @@ import { Slider } from '@/components/ui/slider';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 
+// Cálculo de distancia Haversine entre dos coordenadas (km)
+function haversineKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 export default function DriverQuickRequests() {
   const [driver, setDriver] = useState(null);
   const [user, setUser] = useState(null);
@@ -37,11 +47,32 @@ export default function DriverQuickRequests() {
 
   const fetchNearbyRides = async (d, r) => {
     try {
-      // Load all "confirmed" or "searching" rides not yet assigned to a driver
-      const allRides = await base44.entities.Ride.filter({ status: 'searching' }, '-created_date', 20);
-      // Filter: not assigned to this driver, not assigned to anyone else
-      const available = allRides.filter(ride => !ride.driver_id || ride.driver_id === '');
-      setRides(available);
+      const allRides = await base44.entities.Ride.filter({ status: 'searching' }, '-created_date', 50);
+      // Filtrar: no asignados
+      const unassigned = allRides.filter(ride => !ride.driver_id || ride.driver_id === '');
+
+      // Filtrar por distancia Haversine si el conductor tiene lat/lng válidos
+      const driverLat = d?.current_location_lat;
+      const driverLng = d?.current_location_lng;
+      const hasLocation = typeof driverLat === 'number' && typeof driverLng === 'number';
+
+      const nearby = unassigned
+        .map(ride => {
+          if (!hasLocation || typeof ride.origin_lat !== 'number' || typeof ride.origin_lng !== 'number') {
+            return { ...ride, _distKm: null }; // sin coords: incluir con distancia desconocida
+          }
+          const dist = haversineKm(driverLat, driverLng, ride.origin_lat, ride.origin_lng);
+          return { ...ride, _distKm: dist };
+        })
+        .filter(ride => ride._distKm === null || ride._distKm <= r)
+        .sort((a, b) => {
+          if (a._distKm === null && b._distKm === null) return 0;
+          if (a._distKm === null) return 1;
+          if (b._distKm === null) return -1;
+          return a._distKm - b._distKm;
+        });
+
+      setRides(nearby);
     } catch { setRides([]); }
   };
 
@@ -150,7 +181,11 @@ export default function DriverQuickRequests() {
                       <div className="flex items-start justify-between mb-3">
                         <div>
                           <p className="font-bold text-slate-900 text-lg">${ride.fare_estimated} MXN</p>
-                          <p className="text-slate-500 text-sm">{ride.distance_km || '~15'} km estimado</p>
+                          <p className="text-slate-500 text-sm">
+                            {ride._distKm !== null && ride._distKm !== undefined
+                              ? `${ride._distKm.toFixed(1)} km de ti`
+                              : ride.distance_km ? `${ride.distance_km} km de ruta` : 'Distancia desconocida'}
+                          </p>
                         </div>
                         <div className="flex items-center gap-1 text-slate-500 text-xs">
                           <Clock className="w-3.5 h-3.5" />

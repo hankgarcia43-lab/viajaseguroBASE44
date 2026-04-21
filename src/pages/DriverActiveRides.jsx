@@ -19,8 +19,9 @@ export default function DriverActiveRides() {
   const [activeRide, setActiveRide] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [boardingCode, setBoardingCode] = useState('');
-  const [validating, setValidating] = useState(false);
+  // boardingCodes: { [bookingId]: string } — código individual por pasajero
+  const [boardingCodes, setBoardingCodes] = useState({});
+  const [validating, setValidating] = useState(null); // bookingId o null
   const [config, setConfig] = useState({ commission_recurring: 10, commission_quick_ride: 20 });
 
   useEffect(() => {
@@ -50,24 +51,29 @@ export default function DriverActiveRides() {
 
   const validateBoarding = async (booking) => {
     const expected = booking.id.slice(-6).toUpperCase();
-    const entered = boardingCode.trim().toUpperCase();
-    if (entered !== expected) {
-      toast.error('Código incorrecto. Solicita el código al pasajero.');
+    const entered = (boardingCodes[booking.id] || '').trim().toUpperCase();
+    if (entered.length < 6) {
+      toast.error('Ingresa el código de 6 caracteres del pasajero.');
       return;
     }
-    setValidating(true);
+    if (entered !== expected) {
+      toast.error(`Código incorrecto para ${booking.passenger_name}. Pide el código correcto.`);
+      return;
+    }
+    setValidating(booking.id);
     try {
       await base44.entities.RouteBooking.update(booking.id, { status: 'in_progress' });
       await base44.entities.Notification.create({
         user_id: booking.passenger_id, type: 'ride_started',
-        title: '¡Viaje iniciado!',
-        message: `Hola ${booking.passenger_name}, tu viaje ha iniciado. Buen viaje.`,
+        title: '¡Tu viaje ha comenzado!',
+        message: `Hola ${booking.passenger_name}, tu viaje inició. ¡Buen viaje y viaja seguro!`,
       });
-      toast.success(`✅ Abordaje confirmado — ${booking.passenger_name}`);
-      setBoardingCode('');
+      toast.success(`Abordaje confirmado — ${booking.passenger_name}`);
+      // Limpiar solo el código de este pasajero
+      setBoardingCodes(prev => { const n = { ...prev }; delete n[booking.id]; return n; });
       await loadData();
-    } catch { toast.error('Error al confirmar'); }
-    finally { setValidating(false); }
+    } catch { toast.error('Error al confirmar abordaje. Intenta de nuevo.'); }
+    finally { setValidating(null); }
   };
 
   const completeRide = async (ride) => {
@@ -172,9 +178,9 @@ export default function DriverActiveRides() {
 
                       <div className="flex items-center gap-2 mb-2">
                         <Input
-                          placeholder="Código del pasajero (6 dígitos)"
-                          value={boardingCode}
-                          onChange={e => setBoardingCode(e.target.value.toUpperCase())}
+                          placeholder="Código del pasajero (6 caracteres)"
+                          value={boardingCodes[b.id] || ''}
+                          onChange={e => setBoardingCodes(prev => ({ ...prev, [b.id]: e.target.value.toUpperCase() }))}
                           maxLength={6}
                           className="font-mono text-center text-lg tracking-widest"
                         />
@@ -184,10 +190,10 @@ export default function DriverActiveRides() {
                       </p>
                       <Button
                         onClick={() => validateBoarding(b)}
-                        disabled={boardingCode.length < 6 || validating}
+                        disabled={(boardingCodes[b.id] || '').length < 6 || validating === b.id}
                         className="w-full bg-blue-600 hover:bg-blue-700"
                       >
-                        {validating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <QrCode className="w-4 h-4 mr-2" />}
+                        {validating === b.id ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <QrCode className="w-4 h-4 mr-2" />}
                         Confirmar abordaje
                       </Button>
                     </CardContent>

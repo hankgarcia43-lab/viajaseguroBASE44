@@ -18,6 +18,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { loadAppConfig } from '@/lib/useAppConfig';
+import { getCommissionPct } from '@/lib/commissionCalc';
 
 const DAYS = [
   { id: 'lun', label: 'Lun' },
@@ -47,6 +49,7 @@ export default function CreateRoute() {
   const [submitting, setSubmitting] = useState(false);
   const [pois, setPois] = useState([]);
   const [step, setStep] = useState(1);
+  const [commissionPct, setCommissionPct] = useState(10); // cargado dinámicamente desde AppConfig
   
   const [selectingFor, setSelectingFor] = useState(null); // 'origin' or 'destination'
   const [searchQuery, setSearchQuery] = useState('');
@@ -90,9 +93,13 @@ export default function CreateRoute() {
         return;
       }
 
-      // Load POIs
-      const poisData = await base44.entities.POI.filter({ active: true }, '-priority', 50);
+      // Load POIs y comisión dinámica
+      const [poisData, appConfig] = await Promise.all([
+        base44.entities.POI.filter({ active: true }, '-priority', 50),
+        loadAppConfig()
+      ]);
       setPois(poisData);
+      setCommissionPct(getCommissionPct(appConfig, 'recurring'));
 
     } catch (error) {
       console.error('Error loading data:', error);
@@ -167,15 +174,23 @@ export default function CreateRoute() {
 
   const handleSubmit = async () => {
     if (!routeData.origin || !routeData.destination) {
-      toast.error('Selecciona origen y destino');
+      toast.error('Selecciona el origen y el destino de la ruta');
       return;
     }
     if (routeData.days.length === 0) {
-      toast.error('Selecciona al menos un día');
+      toast.error('Selecciona al menos un día de la semana');
+      return;
+    }
+    if (!routeData.departureTime) {
+      toast.error('Indica la hora de salida');
       return;
     }
     if (routeData.pricePerSeat < 20) {
-      toast.error('El precio mínimo es $20 MXN');
+      toast.error('El precio por asiento debe ser al menos $20 MXN');
+      return;
+    }
+    if (routeData.totalSeats < 1) {
+      toast.error('Debes ofrecer al menos 1 asiento');
       return;
     }
 
@@ -421,17 +436,17 @@ export default function CreateRoute() {
               )}
             </div>
 
-            {/* Earnings estimate */}
+            {/* Earnings estimate — comisión dinámica desde AppConfig */}
             {routeData.totalSeats > 0 && routeData.pricePerSeat > 0 && (
               <div className="p-4 bg-green-50 rounded-xl border border-green-200">
                 <p className="text-sm text-green-700">
                   <strong>Ganancia potencial por viaje:</strong>
                 </p>
                 <p className="text-2xl font-bold text-green-600">
-                  ${Math.round(routeData.totalSeats * routeData.pricePerSeat * 0.8)} MXN
+                  ${Math.round(routeData.totalSeats * routeData.pricePerSeat * (1 - commissionPct / 100))} MXN
                 </p>
                 <p className="text-xs text-green-600">
-                  (con todos los asientos vendidos, menos 20% comisión)
+                  (con todos los asientos vendidos, menos {commissionPct}% comisión de plataforma)
                 </p>
               </div>
             )}

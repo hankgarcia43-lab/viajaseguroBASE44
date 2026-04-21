@@ -27,9 +27,28 @@ export default function PaymentInstructions() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [receiptUrl, setReceiptUrl] = useState(null);
+  const [polling, setPolling] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => { loadData(); }, []);
+
+  // Polling: verificar cada 8 segundos si el pago fue aprobado → redirigir automáticamente
+  useEffect(() => {
+    if (!booking || booking.payment_status === 'paid') return;
+    setPolling(true);
+    const interval = setInterval(async () => {
+      try {
+        const fresh = await base44.entities.RouteBooking.filter({ id: booking.id });
+        if (fresh.length > 0 && fresh[0].payment_status === 'paid') {
+          clearInterval(interval);
+          setPolling(false);
+          toast.success('¡Pago aprobado! Redirigiendo a tu boleto...');
+          setTimeout(() => navigate(createPageUrl('PassengerTicket') + `?bookingId=${booking.id}`), 1200);
+        }
+      } catch { /* silencioso */ }
+    }, 8000);
+    return () => { clearInterval(interval); setPolling(false); };
+  }, [booking?.id, booking?.payment_status]);
 
   const loadData = async () => {
     try {
@@ -299,11 +318,12 @@ export default function PaymentInstructions() {
           </CardContent>
         </Card>
 
-        {/* Status alert */}
+        {/* Status alert — con indicador de verificación automática */}
         <Alert className="mb-6 border-blue-200 bg-blue-50">
           <Clock className="h-4 w-4 text-blue-600" />
           <AlertDescription className="text-blue-800 text-sm">
-            Tu pago está en revisión por administración. Recibirás una notificación cuando sea aprobado y tu boleto estará disponible.
+            Tu pago está en revisión. Serás redirigido automáticamente a tu boleto en cuanto sea aprobado.
+            {polling && <span className="ml-1 inline-flex items-center gap-1 text-blue-600"><Loader2 className="w-3 h-3 animate-spin" /> Verificando...</span>}
           </AlertDescription>
         </Alert>
 
