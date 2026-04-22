@@ -130,7 +130,7 @@ export default function Landing() {
                   { step: '1', title: 'Regístrate', desc: 'Crea tu cuenta con Gmail o número de celular' },
                   { step: '2', title: 'Elige tu ruta', desc: 'Ve el feed de conductores disponibles' },
                   { step: '3', title: 'Selecciona días', desc: '5+ días = descuento semanal automático' },
-                  { step: '4', title: 'Paga y viaja', desc: 'Enlace de pago Mercado Pago, confirmación en 12 hrs' },
+                  { step: '4', title: 'Paga y viaja', desc: 'Realiza tu transferencia y el equipo confirma tu lugar en menos de 12 hrs.' },
                 ].map(item => (
                   <div key={item.step} className="flex gap-4">
                     <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">{item.step}</div>
@@ -155,7 +155,7 @@ export default function Landing() {
                   { step: '1', title: 'Regístrate', desc: 'Crea tu cuenta con Gmail o número de celular' },
                   { step: '2', title: 'Verifica documentos', desc: 'INE, licencia, tarjeta de circulación y foto' },
                   { step: '3', title: 'Toma una ruta', desc: 'Elige del catálogo o crea la tuya propia' },
-                  { step: '4', title: 'Gana dinero', desc: 'Solo 20% de comisión. Pago semanal.' },
+                  { step: '4', title: 'Gana dinero', desc: 'Solo 10% de comisión en rutas fijas. Pago semanal.' },
                 ].map(item => (
                   <div key={item.step} className="flex gap-4">
                     <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">{item.step}</div>
@@ -201,7 +201,7 @@ export default function Landing() {
             </div>
             <span className="font-bold text-white">Viaja Seguro</span>
           </div>
-          <p className="text-sm text-slate-500">© 2025 Viaja Seguro · EdoMex / CDMX, México</p>
+          <p className="text-sm text-slate-500">© 2026 Viaja Seguro · EdoMex / CDMX, México</p>
         </div>
       </footer>
     </div>

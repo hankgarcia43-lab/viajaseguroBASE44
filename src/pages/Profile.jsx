@@ -263,7 +263,7 @@ export default function Profile() {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-bold text-white">¿Quieres ser conductor?</h3>
-                  <p className="text-white/70 text-sm">Solo 10% comisión. Ingresos constantes.</p>
+                  <p className="text-white/70 text-sm">10% comisión en rutas fijas. Ingresos semanales garantizados.</p>
                 </div>
                 <Link to={createPageUrl('DriverOnboarding')}>
                   <Button className="bg-white text-indigo-600 hover:bg-white/90">

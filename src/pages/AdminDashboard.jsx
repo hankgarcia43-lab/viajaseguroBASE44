@@ -312,6 +312,13 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
+                  {recentRides.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="text-center py-10 text-slate-400">
+                        Sin viajes registrados todavía. Los viajes aparecerán aquí cuando los conductores inicien operaciones.
+                      </td>
+                    </tr>
+                  )}
                   {recentRides.map((ride) => (
                     <tr key={ride.id} className="hover:bg-slate-50">
                       <td className="px-4 py-3">
