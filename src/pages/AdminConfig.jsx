@@ -20,6 +20,7 @@ const DEFAULTS = {
   bank_account_holder: '',
   bank_clabe: '',
   bank_account_number: '',
+  mercadopago_link: 'https://link.mercadopago.com.mx/viajaseguro2026',
   commission_recurring: 10,
   commission_quick_ride: 20,
   base_fare: 12,
@@ -183,6 +184,7 @@ export default function AdminConfig() {
                 { key: 'bank_account_holder', label: 'Titular de la cuenta', placeholder: 'Nombre completo o razón social' },
                 { key: 'bank_clabe', label: 'CLABE interbancaria (18 dígitos)', placeholder: '012345678901234567' },
                 { key: 'bank_account_number', label: 'Número de cuenta', placeholder: '1234567890' },
+                { key: 'mercadopago_link', label: 'Link de Mercado Pago', placeholder: 'https://link.mercadopago.com.mx/...' },
               ].map(({ key, label, placeholder }) => (
                 <div key={key}>
                   <Label>{label}</Label>

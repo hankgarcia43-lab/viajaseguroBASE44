@@ -1,9 +1,10 @@
 import React from 'react';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '../utils';
-import { User, ArrowRight, MapPin, Clock, Shield } from 'lucide-react';
+import { User, ArrowRight, MapPin, Clock, Shield, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { motion } from 'framer-motion';
 
 export default function WelcomePasajero() {
@@ -31,6 +32,14 @@ export default function WelcomePasajero() {
           <p className="text-center text-slate-600 mb-8">
             Viaja seguro y económico de EdoMex a CDMX
           </p>
+
+          {/* Security warning */}
+          <Alert className="mb-5 border-amber-300 bg-amber-50">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-800 text-xs leading-relaxed">
+              <strong>Importante:</strong> Usa un correo y contraseña <strong>nuevos y únicos</strong> para esta app. No uses contraseñas de tu banco, Gmail u otras redes sociales.
+            </AlertDescription>
+          </Alert>
 
           {/* Features */}
           <div className="space-y-3 mb-8">

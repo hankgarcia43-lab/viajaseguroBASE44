@@ -61,7 +61,7 @@ export default function Layout({ children, currentPageName }) {
   const isAdminPage = adminPages.includes(currentPageName);
 
   // Child pages that should show back button
-  const childPages = ['RouteDetails', 'Notifications', 'RateRide', 'ReportIncident', 'PassengerTicket', 'PaymentInstructions', 'DriverOnboarding', 'CreateRoute', 'PassengerHistory', 'DriverHistory', 'DriverEarnings', 'AdminKYC', 'AdminIncidents', 'AdminPayments', 'AdminConfig', 'AdminRoutes', 'Soporte'];
+  const childPages = ['RouteDetails', 'Notifications', 'RateRide', 'ReportIncident', 'PassengerTicket', 'PaymentInstructions', 'DriverOnboarding', 'CreateRoute', 'PassengerHistory', 'DriverHistory', 'DriverEarnings', 'AdminKYC', 'AdminIncidents', 'AdminPayments', 'AdminConfig', 'AdminRoutes', 'Soporte', 'BookingChat'];
   const isChildPage = childPages.includes(currentPageName);
 
   // Driver pages

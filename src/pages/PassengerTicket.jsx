@@ -4,8 +4,9 @@ import { createPageUrl } from '../utils';
 import { useNavigate } from 'react-router-dom';
 import { 
   CheckCircle, Car, MapPin, Clock, User, 
-  Phone, Loader2, Shield, Copy, AlertCircle
+  Phone, Loader2, Shield, Copy, AlertCircle, MessageCircle
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -186,6 +187,14 @@ export default function PassengerTicket() {
             <Shield className="w-5 h-5 text-green-600 flex-shrink-0" />
             <p className="text-xs text-slate-600">Conductor verificado por Viaja Seguro. Si tienes una emergencia, llama al <strong>911</strong>.</p>
           </div>
+
+          {/* Chat with driver */}
+          <Link to={createPageUrl('BookingChat') + `?bookingId=${booking.id}`} className="block mb-3">
+            <Button variant="outline" className="w-full rounded-xl text-blue-600 border-blue-200 hover:bg-blue-50">
+              <MessageCircle className="w-4 h-4 mr-2" />
+              Chatear con tu conductor
+            </Button>
+          </Link>
 
           {/* Emergency call */}
           <a href="tel:911">

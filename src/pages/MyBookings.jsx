@@ -243,12 +243,23 @@ export default function MyBookings() {
                       <CardContent className="p-4">
                         {/* Header */}
                         <div className="flex items-start justify-between mb-3">
-                          <div>
-                            <p className="text-sm text-slate-500">
-                              {format(tripDate, "EEEE d 'de' MMMM", { locale: es })}
-                            </p>
-                            {getStatusBadge(booking.status)}
-                          </div>
+                         <div>
+                           <p className="text-sm text-slate-500">
+                             {format(tripDate, "EEEE d 'de' MMMM", { locale: es })}
+                           </p>
+                           <div className="flex items-center gap-1 flex-wrap">
+                             {getStatusBadge(booking.status)}
+                             {booking.payment_status === 'pending' && booking.receipt_url && (
+                               <Badge className="bg-amber-100 text-amber-700 text-[10px]">Pago en revisión</Badge>
+                             )}
+                             {booking.payment_status === 'paid' && (
+                               <Badge className="bg-green-100 text-green-700 text-[10px]">Pago aprobado ✓</Badge>
+                             )}
+                             {booking.payment_status === 'cancelled' && (
+                               <Badge className="bg-red-100 text-red-700 text-[10px]">Pago rechazado</Badge>
+                             )}
+                           </div>
+                         </div>
                           <div className="text-right">
                             <p className="text-lg font-bold text-slate-900">${booking.total_price}</p>
                             <p className="text-xs text-slate-500">{booking.seats_booked} asiento(s)</p>
@@ -289,9 +300,23 @@ export default function MyBookings() {
                           </div>
                           <div className="flex flex-col gap-1 items-end">
                             {booking.payment_status === 'paid' && (
-                              <Link to={createPageUrl('PassengerTicket') + `?bookingId=${booking.id}`}>
-                                <Button size="sm" className="bg-green-600 hover:bg-green-700 text-xs h-7 px-2">
-                                  Ver boleto
+                              <>
+                                <Link to={createPageUrl('PassengerTicket') + `?bookingId=${booking.id}`}>
+                                  <Button size="sm" className="bg-green-600 hover:bg-green-700 text-xs h-7 px-2">
+                                    Ver boleto
+                                  </Button>
+                                </Link>
+                                <Link to={createPageUrl('BookingChat') + `?bookingId=${booking.id}`}>
+                                  <Button size="sm" variant="outline" className="text-xs h-7 px-2 text-blue-600 border-blue-200">
+                                    Chat
+                                  </Button>
+                                </Link>
+                              </>
+                            )}
+                            {booking.payment_status === 'pending' && !booking.receipt_url && (
+                              <Link to={createPageUrl('PaymentInstructions') + `?bookingId=${booking.id}`}>
+                                <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-xs h-7 px-2 text-white">
+                                  Pagar
                                 </Button>
                               </Link>
                             )}

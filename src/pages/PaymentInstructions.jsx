@@ -4,7 +4,7 @@ import { createPageUrl } from '../utils';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   CheckCircle, CreditCard, Clock, Loader2, Copy, 
-  AlertCircle, Upload, Image, X, Building2
+  AlertCircle, Upload, Image, X, Building2, ExternalLink
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,9 +15,10 @@ import { toast } from 'sonner';
 
 const BANK_DEFAULTS = {
   bank_name: 'BBVA',
-  bank_account_holder: 'Viaja Seguro S.A. de C.V.',
-  bank_clabe: '012345678901234567',
-  bank_account_number: '1234567890',
+  bank_account_holder: 'Viaja Seguro',
+  bank_clabe: '',
+  bank_account_number: '',
+  mercadopago_link: 'https://link.mercadopago.com.mx/viajaseguro2026',
 };
 
 export default function PaymentInstructions() {
@@ -69,7 +70,7 @@ export default function PaymentInstructions() {
       // Load bank info from config
       const loaded = { ...BANK_DEFAULTS };
       configs.forEach(c => {
-        if (c.config_key.startsWith('bank_')) loaded[c.config_key] = c.config_value;
+        if (c.config_key.startsWith('bank_') || c.config_key === 'mercadopago_link') loaded[c.config_key] = c.config_value;
       });
       setBankInfo(loaded);
 
@@ -192,20 +193,36 @@ export default function PaymentInstructions() {
           </CardContent>
         </Card>
 
+        {/* Mercado Pago CTA */}
+        {bankInfo.mercadopago_link && (
+          <Card className="mb-5 border-blue-400 bg-blue-50">
+            <CardContent className="p-5">
+              <p className="text-sm font-semibold text-blue-900 mb-1">Opción 1 — Pagar con Mercado Pago</p>
+              <p className="text-xs text-blue-700 mb-3">Entra al link, paga el monto exacto y sube tu comprobante aquí.</p>
+              <a href={bankInfo.mercadopago_link} target="_blank" rel="noopener noreferrer">
+                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl gap-2">
+                  <ExternalLink className="w-4 h-4" />
+                  Pagar con Mercado Pago — ${booking.total_price} MXN
+                </Button>
+              </a>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Bank data */}
-        <Card className="mb-5 border-blue-200">
+        <Card className="mb-5 border-slate-200">
           <CardContent className="p-5">
             <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
               <Building2 className="w-5 h-5 text-blue-600" />
-              Datos para depósito / transferencia
+              Opción 2 — Transferencia bancaria
             </h3>
             <div className="space-y-3">
               {[
                 { label: 'Banco', value: bankInfo.bank_name, canCopy: false },
                 { label: 'Titular', value: bankInfo.bank_account_holder, canCopy: true },
-                { label: 'CLABE interbancaria', value: bankInfo.bank_clabe, canCopy: true, mono: true },
-                { label: 'Número de cuenta', value: bankInfo.bank_account_number, canCopy: true, mono: true },
-              ].map(({ label, value, canCopy, mono }) => (
+                bankInfo.bank_clabe ? { label: 'CLABE interbancaria', value: bankInfo.bank_clabe, canCopy: true, mono: true } : null,
+                bankInfo.bank_account_number ? { label: 'Número de cuenta', value: bankInfo.bank_account_number, canCopy: true, mono: true } : null,
+              ].filter(Boolean).map(({ label, value, canCopy, mono }) => (
                 <div key={label} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-slate-500 mb-0.5">{label}</p>
@@ -249,10 +266,10 @@ export default function PaymentInstructions() {
             </h3>
             <div className="space-y-4">
               {[
-                { num: '1', title: 'Deposita el monto exacto', desc: `Transfiere $${booking.total_price} MXN a la cuenta indicada.` },
-                { num: '2', title: 'Incluye la referencia', desc: `Escribe el código "${referenceCode}" en el concepto del pago.` },
-                { num: '3', title: 'Sube tu comprobante', desc: 'Toma foto o sube el comprobante de transferencia aquí abajo.' },
-                { num: '4', title: 'Espera validación', desc: 'El admin revisará tu pago. Recibirás notificación de confirmación.' },
+                { num: '1', title: 'Paga el monto exacto', desc: `Usa Mercado Pago o transferencia. El monto es exactamente $${booking.total_price} MXN.` },
+                { num: '2', title: 'Incluye la referencia', desc: `Si pagas por transferencia, escribe el código "${referenceCode}" en el concepto.` },
+                { num: '3', title: 'Sube tu comprobante', desc: 'Toma foto del comprobante o captura de pantalla y súbelo aquí abajo.' },
+                { num: '4', title: 'Espera validación (máx. 12 hrs)', desc: 'El equipo revisará tu pago. Recibirás tu boleto digital en cuanto sea aprobado.' },
               ].map((step) => (
                 <div key={step.num} className="flex gap-4">
                   <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">

@@ -47,6 +47,7 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
+import BookingChat from './pages/BookingChat';
 import AdminConfig from './pages/AdminConfig';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminIncidents from './pages/AdminIncidents';
@@ -83,6 +84,7 @@ import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
+    "BookingChat": BookingChat,
     "AdminConfig": AdminConfig,
     "AdminDashboard": AdminDashboard,
     "AdminIncidents": AdminIncidents,

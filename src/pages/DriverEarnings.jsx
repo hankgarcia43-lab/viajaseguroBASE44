@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { 
   DollarSign, TrendingUp, Loader2, Car, CreditCard, Wallet,
-  MessageCircle, Building2, X, Save
+  MessageCircle, Building2, X, Save, AlertCircle
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { format, startOfWeek, eachDayOfInterval, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -17,6 +19,7 @@ export default function DriverEarnings() {
   const [driver, setDriver] = useState(null);
   const [rides, setRides] = useState([]);
   const [payments, setPayments] = useState([]);
+  const [routeBookings, setRouteBookings] = useState([]);
   const [appConfig, setAppConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('week');
@@ -39,12 +42,14 @@ export default function DriverEarnings() {
       const driverData = drivers[0];
       setDriver(driverData);
 
-      const [allRides, allPayments] = await Promise.all([
+      const [allRides, allPayments, allRouteBookings] = await Promise.all([
         base44.entities.Ride.filter({ driver_id: driverData.id, status: 'completed' }, '-completed_at', 100),
         base44.entities.Payment.filter({ driver_id: driverData.id }, '-created_date', 100),
+        base44.entities.RouteBooking.filter({ driver_id: driverData.id, payment_status: 'paid' }, '-created_date', 200),
       ]);
       setRides(allRides);
       setPayments(allPayments);
+      setRouteBookings(allRouteBookings);
 
     } catch (error) {
       console.error('Error loading data:', error);
@@ -218,7 +223,7 @@ export default function DriverEarnings() {
             <CardContent className="p-4">
               <div className="flex items-center gap-2 text-slate-500 mb-2">
                 <CreditCard className="w-4 h-4" />
-                <span className="text-sm">Descuento plataforma</span>
+                <span className="text-sm">Cargo operativo</span>
               </div>
               <p className="text-2xl font-bold text-slate-900">${stats.platformFee.toLocaleString()}</p>
             </CardContent>
@@ -250,6 +255,39 @@ export default function DriverEarnings() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Route Bookings - confirmed paid */}
+        {routeBookings.length > 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-lg">Reservas confirmadas en mis rutas</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {routeBookings.slice(0, 15).map((rb) => (
+                <div key={rb.id} className="flex items-center justify-between p-4 border-b last:border-0">
+                  <div>
+                    <p className="font-medium text-slate-900 text-sm">{rb.passenger_name || 'Pasajero'}</p>
+                    <p className="text-xs text-slate-500">
+                      {(rb.days_booked || []).join(', ')} · {rb.seats_booked || 1} asiento(s)
+                    </p>
+                    <p className="text-xs text-slate-400">{format(new Date(rb.created_date), "d MMM yyyy", { locale: es })}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-green-600">${rb.total_price}</p>
+                    <Badge className="bg-green-100 text-green-700 text-[10px]">Pagado</Badge>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+        <Alert className="mb-6 border-blue-200 bg-blue-50">
+          <AlertCircle className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-blue-800 text-sm">
+            Los pagos se liberan cuando los viajes se completan y administración valida la operación. Usa el botón de solicitud de pago para que el equipo procese tu saldo.
+          </AlertDescription>
+        </Alert>
 
         {/* Bank modal */}
         {showBankModal && (
