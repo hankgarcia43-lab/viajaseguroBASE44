@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '../utils';
 import { 
   Car, Users, DollarSign, AlertCircle, Shield, 
-  TrendingUp, Clock, CheckCircle, XCircle, Loader2,
+  TrendingUp, Clock, CheckCircle, Loader2,
   ChevronRight, Activity, Route
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,7 +24,11 @@ export default function AdminDashboard() {
     pendingKYC: 0,
     activeIncidents: 0,
     gmv: 0,
-    todayGMV: 0
+    todayGMV: 0,
+    pendingPayments: 0,
+    totalBookings: 0,
+    confirmedBookings: 0,
+    bookingRevenue: 0,
   });
   const [recentRides, setRecentRides] = useState([]);
   const [chartData, setChartData] = useState([]);
@@ -36,11 +40,12 @@ export default function AdminDashboard() {
   const loadDashboardData = async () => {
     try {
       // Load all data in parallel
-      const [rides, drivers, incidents, payments] = await Promise.all([
+      const [rides, drivers, incidents, payments, bookings] = await Promise.all([
         base44.entities.Ride.list('-created_date', 100),
         base44.entities.Driver.list('-created_date', 100),
         base44.entities.Incident.filter({ status: 'open' }),
-        base44.entities.Payment.list('-created_date', 100)
+        base44.entities.Payment.list('-created_date', 100),
+        base44.entities.RouteBooking.list('-created_date', 200),
       ]);
 
       // Calculate stats
@@ -55,6 +60,11 @@ export default function AdminDashboard() {
       const gmv = completedRides.reduce((sum, r) => sum + (r.fare_final || r.fare_estimated || 0), 0);
       const todayGMV = todayRides.filter(r => r.status === 'completed').reduce((sum, r) => sum + (r.fare_final || r.fare_estimated || 0), 0);
 
+      // Route bookings stats
+      const pendingPayments = bookings.filter(b => b.payment_status === 'pending' && b.receipt_url && b.status !== 'cancelled').length;
+      const confirmedBookings = bookings.filter(b => b.payment_status === 'paid').length;
+      const bookingRevenue = bookings.filter(b => b.payment_status === 'paid').reduce((s, b) => s + (b.total_price || 0), 0);
+
       setStats({
         totalRides: rides.length,
         todayRides: todayRides.length,
@@ -63,7 +73,11 @@ export default function AdminDashboard() {
         pendingKYC: pendingKYC.length,
         activeIncidents: incidents.length,
         gmv,
-        todayGMV
+        todayGMV,
+        pendingPayments,
+        totalBookings: bookings.length,
+        confirmedBookings,
+        bookingRevenue,
       });
 
       setRecentRides(rides.slice(0, 10));
@@ -205,6 +219,43 @@ export default function AdminDashboard() {
           </Card>
         </div>
 
+        {/* Route Bookings Stats */}
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <Card className="border-blue-100 bg-blue-50/40">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                <Route className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">{stats.totalBookings}</p>
+                <p className="text-sm text-slate-500">Reservas totales</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-green-100 bg-green-50/40">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">{stats.confirmedBookings}</p>
+                <p className="text-sm text-slate-500">Reservas pagadas</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-emerald-100 bg-emerald-50/40">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
+                <DollarSign className="w-5 h-5 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">${stats.bookingRevenue.toLocaleString()}</p>
+                <p className="text-sm text-slate-500">Ingresos rutas</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Alerts */}
         <div className="grid md:grid-cols-2 gap-4 mb-6">
           {stats.pendingKYC > 0 && (
@@ -236,6 +287,23 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <ChevronRight className="w-5 h-5 text-red-600" />
+                </CardContent>
+              </Card>
+            </Link>
+          )}
+
+          {stats.pendingPayments > 0 && (
+            <Link to={createPageUrl('AdminPayments')}>
+              <Card className="border-amber-300 bg-amber-50 hover:shadow-md transition-shadow cursor-pointer">
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <DollarSign className="w-6 h-6 text-amber-600" />
+                    <div>
+                      <p className="font-semibold text-amber-900">{stats.pendingPayments} comprobante(s) por revisar</p>
+                      <p className="text-sm text-amber-700">Pagos esperando aprobación</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-amber-600" />
                 </CardContent>
               </Card>
             </Link>

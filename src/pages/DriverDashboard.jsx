@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '../utils';
 import MapView from '../components/map/MapView';
 import { 
-  Power, MapPin, Navigation, Clock, DollarSign, 
+  Power, MapPin, Navigation, Clock, DollarSign, Users,
   Star, ChevronRight, AlertCircle, CheckCircle, X,
   Phone, MessageCircle, Loader2, Car, Shield, Route, Plus, Zap
 } from 'lucide-react';
@@ -535,6 +535,24 @@ export default function DriverDashboard() {
                     </Card>
                   </Link>
                 </div>
+              )}
+
+              {/* Confirmed bookings summary */}
+              {driver?.kyc_status === 'approved' && (
+                <Link to={createPageUrl('DriverActiveRides')}>
+                  <Card className="mb-4 border-blue-200 bg-blue-50 hover:shadow-md transition-shadow">
+                    <CardContent className="p-4 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                        <Users className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-slate-900 text-sm">Ver pasajeros confirmados</p>
+                        <p className="text-xs text-slate-500">Validar abordaje y gestionar tu operación</p>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-blue-400" />
+                    </CardContent>
+                  </Card>
+                </Link>
               )}
 
               {/* No requests */}
