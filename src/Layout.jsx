@@ -61,11 +61,11 @@ export default function Layout({ children, currentPageName }) {
   const isAdminPage = adminPages.includes(currentPageName);
 
   // Child pages that should show back button
-  const childPages = ['RouteDetails', 'Notifications', 'RateRide', 'ReportIncident', 'PassengerTicket', 'PaymentInstructions', 'DriverOnboarding', 'CreateRoute', 'PassengerHistory', 'DriverHistory', 'DriverEarnings', 'AdminKYC', 'AdminIncidents', 'AdminPayments', 'AdminConfig', 'AdminRoutes', 'Soporte', 'BookingChat'];
+  const childPages = ['RouteDetails', 'Notifications', 'RateRide', 'ReportIncident', 'PassengerTicket', 'PaymentInstructions', 'DriverOnboarding', 'CreateRoute', 'PassengerHistory', 'DriverHistory', 'DriverEarnings', 'AdminKYC', 'AdminIncidents', 'AdminPayments', 'AdminConfig', 'AdminRoutes', 'Soporte', 'BookingChat', 'DriverVehicle'];
   const isChildPage = childPages.includes(currentPageName);
 
   // Driver pages
-  const driverPages = ['DriverDashboard', 'DriverFeed', 'DriverOnboarding', 'DriverEarnings', 'DriverHistory', 'CreateRoute', 'MyRoutes'];
+  const driverPages = ['DriverDashboard', 'DriverFeed', 'DriverOnboarding', 'DriverEarnings', 'DriverHistory', 'CreateRoute', 'MyRoutes', 'DriverVehicle'];
   const isDriverPage = driverPages.includes(currentPageName);
 
   // Route pages (passenger)
@@ -90,7 +90,7 @@ export default function Layout({ children, currentPageName }) {
   const driverNavItems = [
     { name: 'Inicio', icon: Car, page: 'DriverDashboard' },
     { name: 'Mis rutas', icon: Route, page: 'MyRoutes' },
-    { name: 'Operación', icon: MapPin, page: 'DriverActiveRides' },
+    { name: 'Vehículo', icon: Car, page: 'DriverVehicle' },
     { name: 'Ganancias', icon: Settings, page: 'DriverEarnings' },
   ];
 
