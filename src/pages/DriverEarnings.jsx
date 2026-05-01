@@ -4,6 +4,7 @@ import {
   DollarSign, TrendingUp, Loader2, Car, CreditCard, Wallet,
   MessageCircle, Building2, X, Save, AlertCircle
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +27,7 @@ export default function DriverEarnings() {
   const [showBankModal, setShowBankModal] = useState(false);
   const [bankAccount, setBankAccount] = useState('');
   const [bankHolder, setBankHolder] = useState('');
+  const [bankName, setBankName] = useState('');
 
   useEffect(() => {
     loadData();
@@ -165,17 +167,32 @@ export default function DriverEarnings() {
               </button>
             )}
 
-            <a
-              href={`https://wa.me/5215574510969?text=${encodeURIComponent(
-                `Hola, soy ${driver?.full_name} y deseo solicitar pago de saldo.\n💰 Saldo: $${driver?.earnings_balance?.toLocaleString() || 0} MXN\n🏦 Cuenta: ${driver?.bank_account || 'pendiente'}\n📱 ${driver?.phone}`
-              )}`}
-              target="_blank" rel="noopener noreferrer"
+            <Button
+              size="sm"
+              className="bg-white/20 text-white hover:bg-white/30 w-full"
+              onClick={async () => {
+                if (!driver?.bank_account) { setShowBankModal(true); toast.info('Registra tu cuenta bancaria primero'); return; }
+                if ((driver?.earnings_balance || 0) <= 0) { toast.error('No tienes saldo disponible para solicitar'); return; }
+                // Create a PaymentLedger payout request
+                await base44.entities.PaymentLedger.create({
+                  transaction_type: 'payout',
+                  reference_type: 'route_booking',
+                  reference_id: driver.id,
+                  user_id: driver.id,
+                  user_role: 'driver',
+                  amount: driver.earnings_balance || 0,
+                  status: 'pending',
+                  description: `Solicitud de pago — ${driver.full_name} — CLABE: ${driver.bank_account} — Titular: ${driver.bank_holder}`,
+                });
+                toast.success('Solicitud enviada. Administración revisará y transferirá a tu cuenta en los próximos días hábiles.');
+              }}
             >
-              <Button size="sm" className="bg-white/20 text-white hover:bg-white/30 w-full">
-                <MessageCircle className="w-4 h-4 mr-2" />
-                Solicitar pago a administración
-              </Button>
-            </a>
+              <DollarSign className="w-4 h-4 mr-2" />
+              Solicitar pago a administración
+            </Button>
+            <p className="text-white/50 text-[10px] text-center mt-1">
+              Los pagos se liberan después de completar viajes y validación del equipo.
+            </p>
           </CardContent>
         </Card>
 
@@ -298,16 +315,31 @@ export default function DriverEarnings() {
                 <button onClick={() => setShowBankModal(false)}><X className="w-5 h-5 text-slate-400" /></button>
               </div>
               <p className="text-sm text-slate-500 mb-4">Registra tu CLABE o número de cuenta para recibir pagos. La administración validará la solicitud.</p>
+              <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2 mb-3 border border-amber-200">
+                ⚠️ El titular debe coincidir exactamente con el nombre registrado en el banco.
+              </p>
               <div className="space-y-3">
                 <div>
-                  <label className="text-sm font-medium text-slate-700">CLABE / Número de cuenta</label>
+                  <label className="text-sm font-medium text-slate-700">Banco</label>
                   <input
                     type="text"
-                    placeholder="18 dígitos CLABE o número de cuenta"
-                    value={bankAccount}
-                    onChange={e => setBankAccount(e.target.value)}
+                    placeholder="Ej: BBVA, Banorte, HSBC, Santander"
+                    value={bankName}
+                    onChange={e => setBankName(e.target.value)}
                     className="mt-1 w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-700">CLABE interbancaria (18 dígitos)</label>
+                  <input
+                    type="text"
+                    placeholder="18 dígitos CLABE"
+                    value={bankAccount}
+                    onChange={e => setBankAccount(e.target.value.replace(/\D/g, '').slice(0, 18))}
+                    className="mt-1 w-full border rounded-xl px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    maxLength={18}
+                  />
+                  <p className="text-xs text-slate-400 mt-0.5">{bankAccount.length}/18 dígitos</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-slate-700">Titular de la cuenta</label>
@@ -323,13 +355,17 @@ export default function DriverEarnings() {
                   className="w-full"
                   onClick={async () => {
                     if (!bankAccount.trim() || !bankHolder.trim()) return;
-                    await base44.entities.Driver.update(driver.id, { bank_account: bankAccount, bank_holder: bankHolder });
+                    await base44.entities.Driver.update(driver.id, {
+                      bank_account: bankAccount,
+                      bank_holder: bankHolder,
+                    });
                     setDriver(prev => ({ ...prev, bank_account: bankAccount, bank_holder: bankHolder }));
+                    toast.success('Cuenta bancaria guardada correctamente');
                     setShowBankModal(false);
                   }}
-                  disabled={!bankAccount.trim() || !bankHolder.trim()}
+                  disabled={!bankAccount.trim() || !bankHolder.trim() || bankAccount.length < 16}
                 >
-                  <Save className="w-4 h-4 mr-2" /> Guardar cuenta
+                  <Save className="w-4 h-4 mr-2" /> Guardar cuenta bancaria
                 </Button>
               </div>
             </div>

@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { 
   DollarSign, CreditCard, AlertCircle, CheckCircle, 
-  Clock, Loader2, RefreshCw, X, Eye, Image, Users,
-  MapPin, Ban
+  Clock, Loader2, RefreshCw, X, Eye, Users,
+  MapPin, Ban, Search, Filter
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +29,8 @@ export default function AdminPayments() {
   const [processing, setProcessing] = useState(false);
   const [showReceiptDialog, setShowReceiptDialog] = useState(false);
   const [showActionDialog, setShowActionDialog] = useState(false);
+  const [payoutRequests, setPayoutRequests] = useState([]);
+  const [mainTab, setMainTab] = useState('passengers'); // 'passengers' | 'drivers'
 
   useEffect(() => { loadData(); }, []);
 
@@ -51,6 +54,14 @@ export default function AdminPayments() {
         allRoutes.forEach(r => { rMap[r.id] = r; });
         setRoutesMap(rMap);
       }
+
+      // Load driver payout requests
+      const ledger = await base44.entities.PaymentLedger.filter(
+        { transaction_type: 'payout', user_role: 'driver' },
+        '-created_date',
+        100
+      );
+      setPayoutRequests(ledger);
     } catch (e) {
       console.error(e);
     } finally {
@@ -58,10 +69,42 @@ export default function AdminPayments() {
     }
   };
 
+  const [searchDriver, setSearchDriver] = useState('');
+  const [searchRoute, setSearchRoute] = useState('');
+  const [filterDate, setFilterDate] = useState('');
+
   const filteredBookings = bookings.filter(b => {
-    if (filter === 'pending') return b.payment_status === 'pending' && b.status !== 'cancelled';
+    // Payment status filter
+    if (filter === 'pending_no_receipt') return b.payment_status === 'pending' && !b.receipt_url && b.status !== 'cancelled';
+    if (filter === 'pending') return b.payment_status === 'pending' && b.receipt_url && b.status !== 'cancelled';
     if (filter === 'paid') return b.payment_status === 'paid';
     if (filter === 'rejected') return b.payment_status === 'cancelled';
+    // By driver
+    if (searchDriver) {
+      const route = routesMap[b.route_id];
+      if (!route?.driver_name?.toLowerCase().includes(searchDriver.toLowerCase())) return false;
+    }
+    // By route text
+    if (searchRoute) {
+      const route = routesMap[b.route_id];
+      const routeText = `${route?.origin_poi_name || ''} ${route?.dest_poi_name || ''}`.toLowerCase();
+      if (!routeText.includes(searchRoute.toLowerCase())) return false;
+    }
+    // By date
+    if (filterDate && b.trip_date !== filterDate) return false;
+    return true;
+  }).filter(b => {
+    // Also apply search filters on top of tab filter
+    if (searchDriver) {
+      const route = routesMap[b.route_id];
+      if (!route?.driver_name?.toLowerCase().includes(searchDriver.toLowerCase())) return false;
+    }
+    if (searchRoute) {
+      const route = routesMap[b.route_id];
+      const routeText = `${route?.origin_poi_name || ''} ${route?.dest_poi_name || ''}`.toLowerCase();
+      if (!routeText.includes(searchRoute.toLowerCase())) return false;
+    }
+    if (filterDate && b.trip_date !== filterDate) return false;
     return true;
   });
 
@@ -232,6 +275,12 @@ export default function AdminPayments() {
     </div>
   );
 
+  const approvePayoutRequest = async (req) => {
+    await base44.entities.PaymentLedger.update(req.id, { status: 'completed' });
+    toast.success('Pago al conductor marcado como pagado');
+    await loadData();
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
@@ -239,7 +288,7 @@ export default function AdminPayments() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Gestión de pagos</h1>
-            <p className="text-slate-500">Aprobación de reservas y comprobantes</p>
+            <p className="text-slate-500">Aprobación de reservas y pagos a conductores</p>
           </div>
           <Button variant="outline" onClick={loadData}>
             <RefreshCw className="w-4 h-4 mr-2" />
@@ -247,8 +296,73 @@ export default function AdminPayments() {
           </Button>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        {/* Main tab: passengers / drivers */}
+        <div className="flex gap-3 mb-6">
+          <button
+            onClick={() => setMainTab('passengers')}
+            className={`flex-1 py-3 rounded-xl font-semibold text-sm transition-all ${mainTab === 'passengers' ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-slate-600 border hover:bg-slate-50'}`}
+          >
+            💳 Pagos de pasajeros
+          </button>
+          <button
+            onClick={() => setMainTab('drivers')}
+            className={`flex-1 py-3 rounded-xl font-semibold text-sm transition-all ${mainTab === 'drivers' ? 'bg-green-600 text-white shadow-lg' : 'bg-white text-slate-600 border hover:bg-slate-50'}`}
+          >
+            🚗 Pagos a conductores {payoutRequests.filter(r => r.status === 'pending').length > 0 && `(${payoutRequests.filter(r => r.status === 'pending').length})`}
+          </button>
+        </div>
+
+        {/* Driver payout requests tab */}
+        {mainTab === 'drivers' && (
+          <div className="space-y-3">
+            {payoutRequests.length === 0 ? (
+              <Card>
+                <CardContent className="p-12 text-center">
+                  <DollarSign className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                  <p className="text-slate-500">No hay solicitudes de pago de conductores</p>
+                </CardContent>
+              </Card>
+            ) : (
+              payoutRequests.map(req => (
+                <Card key={req.id} className={req.status === 'pending' ? 'border-amber-300 bg-amber-50/20' : 'border-green-200 bg-green-50/20'}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          {req.status === 'completed'
+                            ? <Badge className="bg-green-100 text-green-700">Pagado</Badge>
+                            : <Badge className="bg-amber-100 text-amber-700">Solicitud pendiente</Badge>
+                          }
+                          <span className="text-xs text-slate-400">
+                            {req.created_date ? format(new Date(req.created_date), "d MMM yyyy HH:mm", { locale: es }) : ''}
+                          </span>
+                        </div>
+                        <p className="text-sm text-slate-700 leading-relaxed">{req.description || 'Solicitud de pago de conductor'}</p>
+                        <p className="text-2xl font-bold text-slate-900 mt-1">${(req.amount || 0).toLocaleString()} <span className="text-sm font-normal text-slate-500">MXN</span></p>
+                      </div>
+                      <div className="flex-shrink-0">
+                        {req.status === 'pending' && (
+                          <Button
+                            size="sm"
+                            onClick={() => approvePayoutRequest(req)}
+                            className="bg-green-600 hover:bg-green-700 gap-1"
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                            Marcar como pagado
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        )}
+
+
+
+        {mainTab === 'passengers' && <><div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <Card>
             <CardContent className="p-4 flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
@@ -301,23 +415,61 @@ export default function AdminPayments() {
           </Card>
         </div>
 
+        {/* Search / filter bar */}
+        <div className="flex flex-wrap gap-3 mb-4 bg-white p-3 rounded-xl border">
+          <div className="flex items-center gap-2 flex-1 min-w-[160px]">
+            <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
+            <Input
+              placeholder="Buscar conductor..."
+              value={searchDriver}
+              onChange={e => setSearchDriver(e.target.value)}
+              className="border-0 shadow-none p-0 h-auto focus-visible:ring-0 text-sm"
+            />
+          </div>
+          <div className="flex items-center gap-2 flex-1 min-w-[160px]">
+            <MapPin className="w-4 h-4 text-slate-400 flex-shrink-0" />
+            <Input
+              placeholder="Buscar ruta (origen/destino)..."
+              value={searchRoute}
+              onChange={e => setSearchRoute(e.target.value)}
+              className="border-0 shadow-none p-0 h-auto focus-visible:ring-0 text-sm"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-slate-400" />
+            <Input
+              type="date"
+              value={filterDate}
+              onChange={e => setFilterDate(e.target.value)}
+              className="text-sm h-8 w-36"
+            />
+            {filterDate && (
+              <button onClick={() => setFilterDate('')} className="text-slate-400 hover:text-slate-600">
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Tabs */}
         <Tabs value={filter} onValueChange={setFilter} className="mb-4">
-          <TabsList className="bg-white">
-            <TabsTrigger value="pending">
-              Pendientes ({bookings.filter(b => b.payment_status === 'pending' && b.status !== 'cancelled').length})
+          <TabsList className="bg-white flex-wrap h-auto">
+            <TabsTrigger value="pending" className="text-xs">
+              Con comprobante ({bookings.filter(b => b.payment_status === 'pending' && b.receipt_url && b.status !== 'cancelled').length})
             </TabsTrigger>
-            <TabsTrigger value="paid">
+            <TabsTrigger value="pending_no_receipt" className="text-xs">
+              Sin comprobante ({bookings.filter(b => b.payment_status === 'pending' && !b.receipt_url && b.status !== 'cancelled').length})
+            </TabsTrigger>
+            <TabsTrigger value="paid" className="text-xs">
               Aprobados ({bookings.filter(b => b.payment_status === 'paid').length})
             </TabsTrigger>
-            <TabsTrigger value="rejected">
+            <TabsTrigger value="rejected" className="text-xs">
               Rechazados ({bookings.filter(b => b.payment_status === 'cancelled').length})
             </TabsTrigger>
-            <TabsTrigger value="all">Todos</TabsTrigger>
+            <TabsTrigger value="all" className="text-xs">Todos</TabsTrigger>
           </TabsList>
         </Tabs>
 
-        {/* Bookings list */}
         <div className="space-y-3">
           {filteredBookings.length === 0 && (
             <Card>
@@ -414,7 +566,8 @@ export default function AdminPayments() {
               </Card>
             );
           })}
-        </div>
+        </div></>}
+
       </div>
 
       {/* Receipt viewer */}

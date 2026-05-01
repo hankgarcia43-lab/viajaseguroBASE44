@@ -4,8 +4,9 @@ import { invalidateConfigCache } from '@/lib/useAppConfig';
 import { calcCommission } from '@/lib/commissionCalc';
 import { 
   Settings, DollarSign, Clock, Percent, MapPin,
-  Save, Loader2, RefreshCw, Zap, Route, Building2, AlertTriangle, Calculator
+  Save, Loader2, RefreshCw, Zap, Route, Building2, AlertTriangle, Calculator, MessageSquare
 } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +22,14 @@ const DEFAULTS = {
   bank_clabe: '',
   bank_account_number: '',
   mercadopago_link: 'https://link.mercadopago.com.mx/viajaseguro2026',
+  business_name: 'Viaja Seguro',
+  support_whatsapp: '',
+  support_email: '',
+  payment_instructions_text: 'Paga exactamente el monto indicado. No redondees ni cambies la cantidad. Guarda tu comprobante y súbelo aquí. Tu boleto se activará cuando administración apruebe el pago.',
+  msg_payment_pending: 'Tu pago está pendiente. Realiza tu depósito y sube el comprobante.',
+  msg_payment_review: 'Tu comprobante fue recibido y está siendo revisado. Máximo 12 horas.',
+  msg_payment_approved: '¡Tu pago fue aprobado! Tu boleto ya está disponible.',
+  msg_payment_rejected: 'Tu pago fue rechazado. Revisa el motivo y sube un nuevo comprobante.',
   commission_recurring: 10,
   commission_quick_ride: 20,
   base_fare: 12,
@@ -336,6 +345,45 @@ export default function AdminConfig() {
                 </div>
                 <Switch checked={config.allow_owner_letter_exception} onCheckedChange={v => set('allow_owner_letter_exception', v)} />
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Mensajes de pago configurables */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><MessageSquare className="w-5 h-5 text-purple-600" />Mensajes de pago (visibles al pasajero)</CardTitle>
+              <CardDescription>Personaliza los textos que verá el pasajero en cada estado del pago.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div>
+                <Label>Nombre comercial</Label>
+                <Input value={config.business_name || ''} onChange={e => set('business_name', e.target.value)} placeholder="Viaja Seguro" className="mt-2" />
+              </div>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label>WhatsApp de soporte</Label>
+                  <Input value={config.support_whatsapp || ''} onChange={e => set('support_whatsapp', e.target.value)} placeholder="+52155..." className="mt-2" />
+                </div>
+                <div>
+                  <Label>Correo de soporte</Label>
+                  <Input value={config.support_email || ''} onChange={e => set('support_email', e.target.value)} placeholder="soporte@viajaseguro.mx" className="mt-2" />
+                </div>
+              </div>
+              <div>
+                <Label>Instrucciones de pago</Label>
+                <Textarea value={config.payment_instructions_text || ''} onChange={e => set('payment_instructions_text', e.target.value)} rows={3} className="mt-2 text-sm" />
+              </div>
+              {[
+                { key: 'msg_payment_pending', label: 'Mensaje — Pago pendiente', placeholder: 'Tu pago está pendiente...' },
+                { key: 'msg_payment_review', label: 'Mensaje — Pago en revisión', placeholder: 'Tu comprobante fue recibido...' },
+                { key: 'msg_payment_approved', label: 'Mensaje — Pago aprobado', placeholder: '¡Tu pago fue aprobado!...' },
+                { key: 'msg_payment_rejected', label: 'Mensaje — Pago rechazado', placeholder: 'Tu pago fue rechazado...' },
+              ].map(({ key, label, placeholder }) => (
+                <div key={key}>
+                  <Label>{label}</Label>
+                  <Textarea value={config[key] || ''} onChange={e => set(key, e.target.value)} placeholder={placeholder} rows={2} className="mt-2 text-sm" />
+                </div>
+              ))}
             </CardContent>
           </Card>
 
