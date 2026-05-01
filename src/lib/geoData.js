@@ -2,12 +2,12 @@
 
 export const ESTADOS = [
   { id: 'edomex', label: 'Estado de México' },
-  { id: 'cdmx', label: 'Ciudad de México' },
+  { id: 'cdmx',   label: 'Ciudad de México' },
 ];
 
-// 125 municipios oficiales del Estado de México
+// 125 municipios oficiales del Estado de México (ordenados alfabéticamente)
 export const MUNICIPIOS_EDOMEX = [
-  'Acambay de Ruíz Castañeda',
+  'Acambay de Ruiz Castañeda',
   'Acolman',
   'Aculco',
   'Almoloya de Alquisiras',
@@ -26,12 +26,6 @@ export const MUNICIPIOS_EDOMEX = [
   'Ayapango',
   'Calimaya',
   'Capulhuac',
-  'Coacalco de Berriozábal',
-  'Coatepec Harinas',
-  'Cocotitlán',
-  'Coyotepec',
-  'Cuautitlán',
-  'Cuautitlán Izcalli',
   'Chalco',
   'Chapa de Mota',
   'Chapultepec',
@@ -39,9 +33,16 @@ export const MUNICIPIOS_EDOMEX = [
   'Chicoloapan',
   'Chiconcuac',
   'Chimalhuacán',
+  'Coacalco de Berriozábal',
+  'Coatepec Harinas',
+  'Cocotitlán',
+  'Coyotepec',
+  'Cuautitlán',
+  'Cuautitlán Izcalli',
   'Donato Guerra',
   'Ecatepec de Morelos',
   'Ecatzingo',
+  'El Oro',
   'Huehuetoca',
   'Hueypoxtla',
   'Huixquilucan',
@@ -50,7 +51,6 @@ export const MUNICIPIOS_EDOMEX = [
   'Ixtapan de la Sal',
   'Ixtapan del Oro',
   'Ixtlahuaca',
-  'Xalatlaco',
   'Jaltenco',
   'Jilotepec',
   'Jilotzingo',
@@ -58,6 +58,7 @@ export const MUNICIPIOS_EDOMEX = [
   'Jocotitlán',
   'Joquicingo',
   'Juchitepec',
+  'La Paz',
   'Lerma',
   'Luvianos',
   'Malinalco',
@@ -66,19 +67,17 @@ export const MUNICIPIOS_EDOMEX = [
   'Mexicaltzingo',
   'Morelos',
   'Naucalpan de Juárez',
-  'Nezahualcóyotl',
   'Nextlalpan',
+  'Nezahualcóyotl',
   'Nicolás Romero',
   'Nopaltepec',
   'Ocoyoacac',
   'Ocuilan',
-  'El Oro',
   'Otumba',
   'Otzoloapan',
   'Otzolotepec',
   'Ozumba',
   'Papalotla',
-  'La Paz',
   'Polotitlán',
   'Rayón',
   'San Antonio la Isla',
@@ -116,7 +115,6 @@ export const MUNICIPIOS_EDOMEX = [
   'Tlalnepantla de Baz',
   'Tlatlaya',
   'Toluca',
-  'Tonanitla',
   'Tonatico',
   'Tultepec',
   'Tultitlán',
@@ -126,6 +124,7 @@ export const MUNICIPIOS_EDOMEX = [
   'Villa del Carbón',
   'Villa Guerrero',
   'Villa Victoria',
+  'Xalatlaco',
   'Xonacatlán',
   'Zacazonapan',
   'Zacualpan',
@@ -134,81 +133,198 @@ export const MUNICIPIOS_EDOMEX = [
   'Zumpango',
 ];
 
-// Verificación: MUNICIPIOS_EDOMEX.length debe ser 125
-// console.assert(MUNICIPIOS_EDOMEX.length === 125, `EdoMex tiene ${MUNICIPIOS_EDOMEX.length} municipios, se esperaban 125`);
+// 16 alcaldías de CDMX con sus puntos principales organizados
+export const DESTINOS_CDMX = {
+  'Álvaro Obregón': [
+    'Observatorio',
+    'Central de Autobuses Poniente',
+    'Barranca del Muerto',
+    'Mixcoac',
+    'Santa Fe / Centro Santa Fe',
+  ],
+  'Azcapotzalco': [
+    'El Rosario',
+    'Camarones',
+    'Aquiles Serdán',
+    'Refinería',
+    'Ferrería / Arena Ciudad de México',
+  ],
+  'Benito Juárez': [
+    'Zapata',
+    'División del Norte',
+    'Parque de los Venados',
+    'Etiopía / Plaza de la Transparencia',
+    'World Trade Center / Nápoles',
+  ],
+  'Coyoacán': [
+    'Taxqueña',
+    'Universidad',
+    'Miguel Ángel de Quevedo',
+    'General Anaya',
+    'Ciudad Universitaria',
+  ],
+  'Cuajimalpa': [
+    'Santa Fe',
+    'Centro Comercial Santa Fe',
+    'Contadero',
+    'Yaqui',
+    'Hospital ABC Santa Fe',
+  ],
+  'Cuauhtémoc': [
+    'Buenavista',
+    'Hidalgo',
+    'Bellas Artes',
+    'Balderas',
+    'Pino Suárez',
+    'Centro Médico',
+    'Hospital General',
+    'Garibaldi / Lagunilla',
+  ],
+  'Gustavo A. Madero': [
+    'Indios Verdes',
+    'Martín Carrera',
+    'La Raza',
+    'Deportivo 18 de Marzo',
+    'Potrero',
+    'Basílica de Guadalupe',
+    'Hospital La Raza',
+  ],
+  'Iztacalco': [
+    'Pantitlán',
+    'Santa Anita',
+    'Coyuya',
+    'Iztacalco',
+    'Ciudad Deportiva',
+  ],
+  'Iztapalapa': [
+    'Constitución de 1917',
+    'Santa Martha',
+    'Escuadrón 201',
+    'Atlalilco',
+    'UAM-I',
+    'Cerro de la Estrella',
+    'Hospital General de Iztapalapa',
+  ],
+  'La Magdalena Contreras': [
+    'San Jerónimo',
+    'Hospital Ángeles Pedregal',
+    'Periférico Sur',
+    'Luis Cabrera',
+    'El Caminero',
+  ],
+  'Miguel Hidalgo': [
+    'Tacuba',
+    'Tacubaya',
+    'Polanco',
+    'Auditorio',
+    'Chapultepec',
+    'Toreo / Cuatro Caminos',
+    'Hospital Español',
+  ],
+  'Milpa Alta': [
+    'Villa Milpa Alta',
+    'San Pedro Atocpan',
+    'San Antonio Tecómitl',
+    'Oztotepec',
+    'Centro de Milpa Alta',
+  ],
+  'Tláhuac': [
+    'Tláhuac',
+    'Nopalera',
+    'Zapotitlán',
+    'Olivos',
+    'Hospital General Tláhuac',
+  ],
+  'Tlalpan': [
+    'Huipulco',
+    'El Caminero',
+    'Insurgentes Sur',
+    'Hospital Médica Sur',
+    'Instituto Nacional de Cancerología',
+    'Zona de Hospitales Tlalpan',
+  ],
+  'Venustiano Carranza': [
+    'San Lázaro / TAPO',
+    'Pantitlán',
+    'Aeropuerto Terminal 1',
+    'Aeropuerto Terminal 2',
+    'Candelaria',
+    'Morelos',
+    'Jamaica',
+  ],
+  'Xochimilco': [
+    'Centro de Xochimilco',
+    'Deportivo Xochimilco',
+    'La Noria',
+    'Tepepan',
+    'Embarcadero Nuevo Nativitas',
+  ],
+};
 
-// 16 alcaldías oficiales de la Ciudad de México
-export const ALCALDIAS_CDMX = [
-  'Álvaro Obregón',
-  'Azcapotzalco',
-  'Benito Juárez',
-  'Coyoacán',
-  'Cuajimalpa de Morelos',
-  'Cuauhtémoc',
-  'Gustavo A. Madero',
-  'Iztacalco',
-  'Iztapalapa',
-  'La Magdalena Contreras',
-  'Miguel Hidalgo',
-  'Milpa Alta',
-  'Tláhuac',
-  'Tlalpan',
-  'Venustiano Carranza',
-  'Xochimilco',
+export const ALCALDIAS_CDMX = Object.keys(DESTINOS_CDMX);
+
+// Destinos rápidos más usados con su alcaldía correspondiente
+export const DESTINOS_RAPIDOS = [
+  { nombre: 'Indios Verdes',        alcaldia: 'Gustavo A. Madero' },
+  { nombre: 'Martín Carrera',       alcaldia: 'Gustavo A. Madero' },
+  { nombre: 'Pantitlán',            alcaldia: 'Iztacalco' },
+  { nombre: 'San Lázaro / TAPO',    alcaldia: 'Venustiano Carranza' },
+  { nombre: 'Observatorio',         alcaldia: 'Álvaro Obregón' },
+  { nombre: 'Taxqueña',             alcaldia: 'Coyoacán' },
+  { nombre: 'Buenavista',           alcaldia: 'Cuauhtémoc' },
+  { nombre: 'El Rosario',           alcaldia: 'Azcapotzalco' },
+  { nombre: 'Toreo / Cuatro Caminos', alcaldia: 'Miguel Hidalgo' },
+  { nombre: 'Tacubaya',             alcaldia: 'Miguel Hidalgo' },
+  { nombre: 'Centro Médico',        alcaldia: 'Cuauhtémoc' },
+  { nombre: 'Hospital General',     alcaldia: 'Cuauhtémoc' },
+  { nombre: 'La Raza',              alcaldia: 'Gustavo A. Madero' },
+  { nombre: 'Santa Martha',         alcaldia: 'Iztapalapa' },
+  { nombre: 'Constitución de 1917', alcaldia: 'Iztapalapa' },
+  { nombre: 'Universidad',          alcaldia: 'Coyoacán' },
+  { nombre: 'Aeropuerto Terminal 1', alcaldia: 'Venustiano Carranza' },
+  { nombre: 'Aeropuerto Terminal 2', alcaldia: 'Venustiano Carranza' },
 ];
 
-// Puntos de referencia conocidos por municipio/alcaldía (opcional, para sugerencias)
-export const PUNTOS_REFERENCIA = {
-  edomex: {
-    'Atizapán de Zaragoza': ['Plaza Satélite', 'Metro Cuatro Caminos', 'Hospital General de Atizapán'],
-    'Coacalco de Berriozábal': ['Plaza Las Américas Coacalco', 'Hospital General de Coacalco'],
-    'Cuautitlán Izcalli': ['Hospital Regional HRDZ', 'Parque Industrial Izcalli', 'Plaza Cuautitlán Izcalli'],
-    'Ecatepec de Morelos': ['Metro Ciudad Azteca', 'Metro Ecatepec', 'Hospital General de Ecatepec', 'Plaza Las Américas Ecatepec'],
-    'Naucalpan de Juárez': ['Parque Industrial Naucalpan', 'Plaza Satélite (acceso Naucalpan)', 'Hospital Ángeles Naucalpan'],
-    'Nezahualcóyotl': ['Metro Pantitlán (Neza)', 'Hospital General de Nezahualcóyotl'],
-    'Tlalnepantla de Baz': ['Metro El Rosario', 'Parque Industrial Tlalnepantla', 'Hospital General de Tlalnepantla'],
-    'Toluca': ['Terminal de Autobuses Toluca', 'IMSS Toluca', 'Plaza Sendero Toluca', 'Aeropuerto Internacional de Toluca'],
-    'Tecámac': ['Metro Ojo de Agua', 'Plaza Galerías Tecámac'],
-    'Ixtapaluca': ['Plaza Ixtapaluca', 'IMSS Ixtapaluca'],
-    'Chimalhuacán': ['Palacio Municipal de Chimalhuacán', 'Metro Pantitlán (Chimalhuacán)'],
-    'Metepec': ['Plaza Outlet Lerma', 'Hospital Materno Perinatal Metepec'],
-    'Chalco': ['Central de Autobuses Chalco', 'Hospital General de Chalco'],
-    'Tultitlán': ['Parque Industrial Tultitlán', 'Palacio Municipal de Tultitlán'],
-    'Nicolás Romero': ['Plaza Nicolás Romero', 'Hospital General Nicolás Romero'],
-    'Zumpango': ['Terminal de Autobuses Zumpango', 'Metro Ojo de Agua (zona Zumpango)'],
-    'Huixquilucan': ['Interlomas (Plaza)', 'Perisur Huixquilucan'],
-  },
-  cdmx: {
-    'Cuauhtémoc': ['Metro Balderas', 'Metro Hidalgo', 'Metro Bellas Artes', 'Hospital General de México', 'Eje Central / Bucareli'],
-    'Benito Juárez': ['Metro Insurgentes', 'Metro Etiopía', 'WTC Ciudad de México'],
-    'Gustavo A. Madero': ['Metro Indios Verdes', 'Metro La Raza', 'Terminal Norte (Central del Norte)', 'Hospital General Ticomán'],
-    'Azcapotzalco': ['Metro El Rosario', 'Metro Ferrería', 'Parque Industrial Vallejo'],
-    'Iztapalapa': ['Metro Pantitlán', 'Central de Autobuses de Oriente (TAPO)', 'Hospital General de Iztapalapa'],
-    'Miguel Hidalgo': ['Metro Tacubaya', 'Metro Observatorio', 'Santa Fe (Torres Pedregal)'],
-    'Álvaro Obregón': ['Metro Barranca del Muerto', 'Metro Mixcoac', 'Terminal Poniente (Observatorio)'],
-    'Venustiano Carranza': ['Aeropuerto Internacional AICM', 'Metro Terminal Aérea', 'TAPO'],
-    'Coyoacán': ['Metro Copilco', 'Metro Universidad', 'UNAM Ciudad Universitaria'],
-    'Tlalpan': ['Metro Estadio Azteca', 'IMSS Sur (Villa Coapa)', 'Periférico Sur / Perisur'],
-    'Iztacalco': ['Metro Apatlaco', 'Metro Velódromo'],
-    'Xochimilco': ['Tren Ligero Xochimilco', 'Hospital General Xochimilco'],
-    'Cuajimalpa de Morelos': ['Santa Fe (Cuajimalpa)', 'Hospital Ángeles Santa Fe'],
-    'Tláhuac': ['Metro Tláhuac (Línea 12)', 'Hospital General Tláhuac'],
-    'La Magdalena Contreras': ['Periférico Sur / La Magdalena', 'Mercado de La Magdalena'],
-    'Milpa Alta': ['Palacio Municipal Milpa Alta'],
-  },
+// Puntos de referencia del Edomex por municipio (para sugerencias al conductor)
+export const PUNTOS_EDOMEX = {
+  'Atizapán de Zaragoza': ['Plaza Satélite', 'Metro Cuatro Caminos', 'Hospital General de Atizapán'],
+  'Coacalco de Berriozábal': ['Plaza Las Américas Coacalco', 'Hospital General de Coacalco'],
+  'Cuautitlán Izcalli': ['Hospital Regional HRDZ', 'Parque Industrial Izcalli', 'Plaza Cuautitlán Izcalli'],
+  'Ecatepec de Morelos': ['Metro Ciudad Azteca', 'Metro Ecatepec', 'Hospital General de Ecatepec', 'Plaza Las Américas Ecatepec'],
+  'Naucalpan de Juárez': ['Parque Industrial Naucalpan', 'Plaza Satélite (acceso Naucalpan)', 'Hospital Ángeles Naucalpan'],
+  'Nezahualcóyotl': ['Metro Pantitlán (Neza)', 'Hospital General de Nezahualcóyotl', 'Plaza Las Américas Neza'],
+  'Tlalnepantla de Baz': ['Metro El Rosario', 'Parque Industrial Tlalnepantla', 'Hospital General de Tlalnepantla'],
+  'Toluca': ['Terminal de Autobuses Toluca', 'IMSS Toluca', 'Plaza Sendero Toluca', 'Aeropuerto Internacional de Toluca'],
+  'Tecámac': ['Metro Ojo de Agua', 'Plaza Galerías Tecámac'],
+  'Ixtapaluca': ['Plaza Ixtapaluca', 'IMSS Ixtapaluca'],
+  'Chimalhuacán': ['Palacio Municipal de Chimalhuacán', 'Metro Pantitlán (Chimalhuacán)'],
+  'Metepec': ['Plaza Outlet Lerma', 'Hospital Materno Perinatal Metepec'],
+  'Chalco': ['Central de Autobuses Chalco', 'Hospital General de Chalco'],
+  'Tultitlán': ['Parque Industrial Tultitlán', 'Palacio Municipal de Tultitlán'],
+  'Nicolás Romero': ['Plaza Nicolás Romero', 'Hospital General Nicolás Romero'],
+  'Zumpango': ['Terminal de Autobuses Zumpango', 'Metro Ojo de Agua (zona Zumpango)'],
+  'Huixquilucan': ['Interlomas (Plaza)', 'Perisur Huixquilucan'],
+  'Texcoco': ['Plaza Texcoco', 'UAEM Texcoco', 'Central Camionera Texcoco'],
+  'Valle de Chalco Solidaridad': ['Mercado de Valle de Chalco', 'Palacio Municipal'],
+  'Cuautitlán': ['Plaza Cuautitlán', 'Central de Autobuses Cuautitlán'],
+  'Tultepec': ['Mercado de Tultepec', 'Palacio Municipal Tultepec'],
+  'La Paz': ['Plaza La Paz', 'Hospital General La Paz'],
 };
+
+// Funciones de consulta
+export function getMunicipiosOAlcaldias(estado) {
+  if (estado === 'edomex') return MUNICIPIOS_EDOMEX;
+  if (estado === 'cdmx')   return ALCALDIAS_CDMX;
+  return [];
+}
 
 export function getPuntosReferencia(estado, municipioOAlcaldia) {
   if (!estado || !municipioOAlcaldia) return [];
-  return PUNTOS_REFERENCIA[estado]?.[municipioOAlcaldia] || [];
-}
-
-export function getMunicipiosOAlcaldias(estado) {
-  if (estado === 'edomex') return MUNICIPIOS_EDOMEX;
-  if (estado === 'cdmx') return ALCALDIAS_CDMX;
+  if (estado === 'edomex') return PUNTOS_EDOMEX[municipioOAlcaldia] || [];
+  if (estado === 'cdmx')   return DESTINOS_CDMX[municipioOAlcaldia] || [];
   return [];
 }
 
 export function getTotalMunicipiosEdomex() {
-  return MUNICIPIOS_EDOMEX.length; // debe ser 125
+  return MUNICIPIOS_EDOMEX.length;
 }
