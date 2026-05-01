@@ -15,6 +15,7 @@ import { es } from 'date-fns/locale';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { loadAppConfig } from '@/lib/useAppConfig';
 import { calcCommission, getCommissionPct } from '@/lib/commissionCalc';
+import EarningsAnalytics from '@/components/driver/EarningsAnalytics';
 
 export default function DriverEarnings() {
   const [driver, setDriver] = useState(null);
@@ -24,6 +25,7 @@ export default function DriverEarnings() {
   const [appConfig, setAppConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('week');
+  const [mainTab, setMainTab] = useState('resumen');
   const [showBankModal, setShowBankModal] = useState(false);
   const [bankAccount, setBankAccount] = useState('');
   const [bankHolder, setBankHolder] = useState('');
@@ -195,6 +197,25 @@ export default function DriverEarnings() {
             </p>
           </CardContent>
         </Card>
+
+        {/* Main Tabs */}
+        <Tabs value={mainTab} onValueChange={setMainTab} className="mb-6">
+          <TabsList className="w-full bg-white">
+            <TabsTrigger value="resumen" className="flex-1">Resumen</TabsTrigger>
+            <TabsTrigger value="analytics" className="flex-1">Analítica</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        {mainTab === 'analytics' && (
+          <EarningsAnalytics
+            rides={rides}
+            routeBookings={routeBookings}
+            payments={payments}
+            appConfig={appConfig}
+          />
+        )}
+
+        {mainTab === 'resumen' && <>
 
         {/* Period Tabs */}
         <Tabs value={period} onValueChange={setPeriod} className="mb-6">
@@ -406,6 +427,7 @@ export default function DriverEarnings() {
             ))}
           </CardContent>
         </Card>
+        </>}
       </div>
     </div>
   );
