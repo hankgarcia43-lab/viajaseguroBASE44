@@ -54,7 +54,7 @@ import AdminIncidents from './pages/AdminIncidents';
 import AdminKYC from './pages/AdminKYC';
 import AdminPayments from './pages/AdminPayments';
 import AdminRoutes from './pages/AdminRoutes';
-import CreateRoute from './pages/CreateRoute';
+import CreateRoute from './pages/CreateRoute.jsx';
 import DriverActiveRides from './pages/DriverActiveRides';
 import DriverDashboard from './pages/DriverDashboard';
 import DriverEarnings from './pages/DriverEarnings';
