@@ -25,26 +25,26 @@ export default function Layout({ children, currentPageName }) {
   const loadUserData = async () => {
     try {
       const isAuth = await base44.auth.isAuthenticated();
-      if (isAuth) {
-        const userData = await base44.auth.me();
-        setUser(userData);
-        
-        // Check if user is a driver
-        const drivers = await base44.entities.Driver.filter({ user_id: userData.id });
-        if (drivers.length > 0) {
-          setDriver(drivers[0]);
-        }
+      if (!isAuth) return;
 
-        // Load notifications
-        const notifs = await base44.entities.Notification.filter(
+      const userData = await base44.auth.me();
+      if (!userData) return;
+      setUser(userData);
+
+      // Load driver profile and notifications in parallel
+      const [drivers, notifs] = await Promise.all([
+        base44.entities.Driver.filter({ user_id: userData.id }),
+        base44.entities.Notification.filter(
           { user_id: userData.id, read: false },
           '-created_date',
           5
-        );
-        setNotifications(notifs);
-      }
+        )
+      ]);
+
+      if (drivers.length > 0) setDriver(drivers[0]);
+      setNotifications(notifs);
     } catch (error) {
-      console.log('User not authenticated');
+      // Silently ignore — user may not be authenticated on public pages
     }
   };
 
@@ -52,12 +52,12 @@ export default function Layout({ children, currentPageName }) {
     base44.auth.logout();
   };
 
-  // Public pages that don't need auth
+  // Public pages render without any nav chrome
   const publicPages = ['Landing', 'WelcomePasajero', 'WelcomeChofer', 'PaymentInstructions'];
   const isPublicPage = publicPages.includes(currentPageName);
 
   // Admin pages
-  const adminPages = ['AdminDashboard', 'AdminKYC', 'AdminIncidents', 'AdminPayments', 'AdminConfig'];
+  const adminPages = ['AdminDashboard', 'AdminKYC', 'AdminIncidents', 'AdminPayments', 'AdminConfig', 'AdminRoutes'];
   const isAdminPage = adminPages.includes(currentPageName);
 
   // Child pages that should show back button
@@ -68,16 +68,8 @@ export default function Layout({ children, currentPageName }) {
   const driverPages = ['DriverDashboard', 'DriverFeed', 'DriverOnboarding', 'DriverEarnings', 'DriverHistory', 'CreateRoute', 'MyRoutes', 'DriverVehicle'];
   const isDriverPage = driverPages.includes(currentPageName);
 
-  // Route pages (passenger)
-  const routePages = ['SearchRoutes', 'RouteDetails', 'MyBookings'];
-  const isRoutePage = routePages.includes(currentPageName);
-
   if (isPublicPage) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-        {children}
-      </div>
-    );
+    return <>{children}</>;
   }
 
   const passengerNavItems = [
