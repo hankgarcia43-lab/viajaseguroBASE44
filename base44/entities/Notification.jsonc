@@ -1,0 +1,52 @@
+{
+  "name": "Notification",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID del usuario destinatario"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "ride_request",
+        "ride_assigned",
+        "ride_started",
+        "ride_completed",
+        "ride_cancelled",
+        "payment",
+        "kyc_update",
+        "incident",
+        "system"
+      ],
+      "description": "Tipo de notificaci\u00f3n"
+    },
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo de la notificaci\u00f3n"
+    },
+    "message": {
+      "type": "string",
+      "description": "Mensaje de la notificaci\u00f3n"
+    },
+    "data": {
+      "type": "string",
+      "description": "Datos adicionales en JSON"
+    },
+    "read": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si fue le\u00edda"
+    },
+    "ride_id": {
+      "type": "string",
+      "description": "ID del viaje relacionado"
+    }
+  },
+  "required": [
+    "user_id",
+    "type",
+    "title",
+    "message"
+  ]
+}

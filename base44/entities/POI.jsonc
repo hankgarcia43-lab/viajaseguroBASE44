@@ -1,0 +1,56 @@
+{
+  "name": "POI",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nombre del punto de inter\u00e9s"
+    },
+    "short_name": {
+      "type": "string",
+      "description": "Nombre corto para mostrar"
+    },
+    "lat": {
+      "type": "number",
+      "description": "Latitud"
+    },
+    "lng": {
+      "type": "number",
+      "description": "Longitud"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Etiquetas: metro, hospital, centro, industrial, universidad, terminal, aeropuerto, edomex, cdmx"
+    },
+    "priority": {
+      "type": "number",
+      "default": 0,
+      "description": "Prioridad para ordenamiento (mayor = m\u00e1s importante)"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Si est\u00e1 activo"
+    },
+    "icon": {
+      "type": "string",
+      "description": "Nombre del \u00edcono"
+    },
+    "zone": {
+      "type": "string",
+      "enum": [
+        "edomex",
+        "cdmx"
+      ],
+      "description": "Zona geogr\u00e1fica"
+    }
+  },
+  "required": [
+    "name",
+    "lat",
+    "lng"
+  ]
+}

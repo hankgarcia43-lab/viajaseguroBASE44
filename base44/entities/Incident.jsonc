@@ -1,0 +1,111 @@
+{
+  "name": "Incident",
+  "type": "object",
+  "properties": {
+    "ride_id": {
+      "type": "string",
+      "description": "ID del viaje relacionado"
+    },
+    "reporter_id": {
+      "type": "string",
+      "description": "ID del usuario que reporta"
+    },
+    "reporter_role": {
+      "type": "string",
+      "enum": [
+        "passenger",
+        "driver"
+      ],
+      "description": "Rol del reportante"
+    },
+    "reporter_name": {
+      "type": "string",
+      "description": "Nombre del reportante"
+    },
+    "reported_user_id": {
+      "type": "string",
+      "description": "ID del usuario reportado"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "safety",
+        "payment",
+        "behavior",
+        "vehicle",
+        "route",
+        "cancellation",
+        "lost_item",
+        "other"
+      ],
+      "description": "Categor\u00eda del incidente"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "default": "medium",
+      "description": "Prioridad del incidente"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descripci\u00f3n del incidente"
+    },
+    "attachments": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "URLs de archivos adjuntos"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "in_review",
+        "resolved",
+        "closed",
+        "escalated"
+      ],
+      "default": "open",
+      "description": "Estado del incidente"
+    },
+    "resolution": {
+      "type": "string",
+      "description": "Resoluci\u00f3n del incidente"
+    },
+    "admin_notes": {
+      "type": "string",
+      "description": "Notas del administrador"
+    },
+    "resolved_by": {
+      "type": "string",
+      "description": "Admin que resolvi\u00f3"
+    },
+    "resolved_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha de resoluci\u00f3n"
+    },
+    "payment_affected": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si afecta al pago"
+    },
+    "reported_in_window": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si se report\u00f3 en ventana de 10 min"
+    }
+  },
+  "required": [
+    "ride_id",
+    "reporter_id",
+    "category",
+    "description"
+  ]
+}

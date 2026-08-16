@@ -1,0 +1,57 @@
+{
+  "name": "AuditLog",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID del usuario que realiz\u00f3 la acci\u00f3n"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email del usuario"
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "kyc_upload",
+        "kyc_approve",
+        "kyc_reject",
+        "kyc_request_info",
+        "payment_capture",
+        "payment_refund",
+        "payment_dispute",
+        "driver_suspend",
+        "driver_activate",
+        "incident_resolve",
+        "config_change",
+        "ride_cancel",
+        "manual_payout"
+      ],
+      "description": "Tipo de acci\u00f3n"
+    },
+    "entity_type": {
+      "type": "string",
+      "description": "Tipo de entidad afectada"
+    },
+    "entity_id": {
+      "type": "string",
+      "description": "ID de la entidad afectada"
+    },
+    "details": {
+      "type": "string",
+      "description": "Detalles de la acci\u00f3n en JSON"
+    },
+    "ip_address": {
+      "type": "string",
+      "description": "Direcci\u00f3n IP"
+    },
+    "user_agent": {
+      "type": "string",
+      "description": "User Agent del navegador"
+    }
+  },
+  "required": [
+    "user_id",
+    "action"
+  ]
+}

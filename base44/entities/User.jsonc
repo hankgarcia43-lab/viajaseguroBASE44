@@ -1,0 +1,40 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "phone": {
+      "type": "string",
+      "description": "N\u00famero telef\u00f3nico"
+    },
+    "curp": {
+      "type": "string",
+      "description": "CURP del pasajero (privado)"
+    },
+    "curp_verified_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha de verificaci\u00f3n CURP"
+    },
+    "first_ride_confirmed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si ya confirm\u00f3 su primer viaje"
+    },
+    "verification_status": {
+      "type": "string",
+      "enum": [
+        "not_verified",
+        "phone_verified",
+        "curp_verified",
+        "ride_confirmed"
+      ],
+      "default": "not_verified",
+      "description": "Estado de verificaci\u00f3n del pasajero"
+    }
+  },
+  "required": [
+    "phone",
+    "curp",
+    "curp_verified_at"
+  ]
+}

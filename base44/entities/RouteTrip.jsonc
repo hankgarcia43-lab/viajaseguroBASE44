@@ -1,0 +1,85 @@
+{
+  "name": "RouteTrip",
+  "type": "object",
+  "properties": {
+    "route_id": {
+      "type": "string",
+      "description": "ID de la ruta"
+    },
+    "driver_id": {
+      "type": "string",
+      "description": "ID del conductor"
+    },
+    "trip_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha del viaje"
+    },
+    "departure_time": {
+      "type": "string",
+      "description": "Hora de salida programada"
+    },
+    "actual_departure": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Hora real de salida"
+    },
+    "actual_arrival": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Hora real de llegada"
+    },
+    "total_seats": {
+      "type": "number",
+      "description": "Asientos totales"
+    },
+    "booked_seats": {
+      "type": "number",
+      "default": 0,
+      "description": "Asientos reservados"
+    },
+    "available_seats": {
+      "type": "number",
+      "description": "Asientos disponibles"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "scheduled",
+        "boarding",
+        "in_progress",
+        "completed",
+        "cancelled"
+      ],
+      "default": "scheduled",
+      "description": "Estado del viaje"
+    },
+    "total_revenue": {
+      "type": "number",
+      "default": 0,
+      "description": "Ingresos totales del viaje"
+    },
+    "platform_fee": {
+      "type": "number",
+      "default": 0,
+      "description": "Comisi\u00f3n de la plataforma"
+    },
+    "driver_payout": {
+      "type": "number",
+      "default": 0,
+      "description": "Pago al conductor"
+    },
+    "booking_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs de las reservas"
+    }
+  },
+  "required": [
+    "route_id",
+    "driver_id",
+    "trip_date"
+  ]
+}

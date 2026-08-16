@@ -1,0 +1,162 @@
+{
+  "name": "Ride",
+  "type": "object",
+  "properties": {
+    "passenger_id": {
+      "type": "string",
+      "description": "ID del pasajero"
+    },
+    "passenger_name": {
+      "type": "string",
+      "description": "Nombre del pasajero"
+    },
+    "passenger_phone": {
+      "type": "string",
+      "description": "Tel\u00e9fono del pasajero"
+    },
+    "driver_id": {
+      "type": "string",
+      "description": "ID del conductor asignado"
+    },
+    "driver_name": {
+      "type": "string",
+      "description": "Nombre del conductor"
+    },
+    "driver_phone": {
+      "type": "string",
+      "description": "Tel\u00e9fono del conductor"
+    },
+    "driver_photo": {
+      "type": "string",
+      "description": "Foto del conductor"
+    },
+    "vehicle_plate": {
+      "type": "string",
+      "description": "Placas del veh\u00edculo"
+    },
+    "vehicle_model": {
+      "type": "string",
+      "description": "Modelo del veh\u00edculo"
+    },
+    "vehicle_color": {
+      "type": "string",
+      "description": "Color del veh\u00edculo"
+    },
+    "origin_lat": {
+      "type": "number",
+      "description": "Latitud de origen"
+    },
+    "origin_lng": {
+      "type": "number",
+      "description": "Longitud de origen"
+    },
+    "origin_address": {
+      "type": "string",
+      "description": "Direcci\u00f3n de origen"
+    },
+    "dest_lat": {
+      "type": "number",
+      "description": "Latitud de destino"
+    },
+    "dest_lng": {
+      "type": "number",
+      "description": "Longitud de destino"
+    },
+    "dest_address": {
+      "type": "string",
+      "description": "Direcci\u00f3n de destino"
+    },
+    "distance_km": {
+      "type": "number",
+      "description": "Distancia en kil\u00f3metros"
+    },
+    "duration_min": {
+      "type": "number",
+      "description": "Duraci\u00f3n estimada en minutos"
+    },
+    "fare_estimated": {
+      "type": "number",
+      "description": "Tarifa estimada en MXN"
+    },
+    "fare_final": {
+      "type": "number",
+      "description": "Tarifa final en MXN"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "requested",
+        "confirmed",
+        "accepted",
+        "payment_confirmed",
+        "in_progress",
+        "completed",
+        "cancelled"
+      ],
+      "default": "requested",
+      "description": "Estado del viaje"
+    },
+    "qr_code": {
+      "type": "string",
+      "description": "C\u00f3digo QR \u00fanico del viaje"
+    },
+    "qr_active": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si el QR est\u00e1 activo"
+    },
+    "payment_confirmed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha de confirmaci\u00f3n de pago"
+    },
+    "accepted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha de aceptaci\u00f3n por conductor"
+    },
+    "cancel_reason": {
+      "type": "string",
+      "description": "Raz\u00f3n de cancelaci\u00f3n"
+    },
+    "cancelled_by": {
+      "type": "string",
+      "enum": [
+        "passenger",
+        "driver",
+        "system"
+      ],
+      "description": "Qui\u00e9n cancel\u00f3"
+    },
+    "requested_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha/hora de solicitud"
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha/hora de inicio"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha/hora de completado"
+    },
+    "driver_rating": {
+      "type": "number",
+      "description": "Calificaci\u00f3n dada al conductor"
+    },
+    "passenger_rating": {
+      "type": "number",
+      "description": "Calificaci\u00f3n dada al pasajero"
+    }
+  },
+  "required": [
+    "passenger_id",
+    "origin_lat",
+    "origin_lng",
+    "dest_lat",
+    "dest_lng"
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "name": "PaymentLedger",
+  "type": "object",
+  "properties": {
+    "transaction_type": {
+      "type": "string",
+      "enum": [
+        "preauth",
+        "capture",
+        "refund",
+        "payout",
+        "fee",
+        "penalty",
+        "cancellation_fee"
+      ],
+      "description": "Tipo de transacci\u00f3n"
+    },
+    "reference_type": {
+      "type": "string",
+      "enum": [
+        "ride",
+        "route_booking",
+        "route_trip"
+      ],
+      "description": "Tipo de referencia"
+    },
+    "reference_id": {
+      "type": "string",
+      "description": "ID de la referencia (ride_id, booking_id, etc)"
+    },
+    "payment_id": {
+      "type": "string",
+      "description": "ID del pago relacionado"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "ID del usuario involucrado"
+    },
+    "user_role": {
+      "type": "string",
+      "enum": [
+        "passenger",
+        "driver",
+        "platform"
+      ],
+      "description": "Rol del usuario"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Monto de la transacci\u00f3n"
+    },
+    "currency": {
+      "type": "string",
+      "default": "MXN",
+      "description": "Moneda"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "completed",
+        "failed",
+        "reversed"
+      ],
+      "default": "pending",
+      "description": "Estado de la transacci\u00f3n"
+    },
+    "provider_transaction_id": {
+      "type": "string",
+      "description": "ID de transacci\u00f3n del proveedor de pagos"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descripci\u00f3n de la transacci\u00f3n"
+    },
+    "metadata": {
+      "type": "string",
+      "description": "Metadatos adicionales en JSON"
+    },
+    "held_for_incident": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si est\u00e1 retenido por incidente"
+    },
+    "incident_id": {
+      "type": "string",
+      "description": "ID del incidente si aplica"
+    }
+  },
+  "required": [
+    "transaction_type",
+    "reference_type",
+    "reference_id",
+    "amount"
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "name": "Payment",
+  "type": "object",
+  "properties": {
+    "ride_id": {
+      "type": "string",
+      "description": "ID del viaje"
+    },
+    "passenger_id": {
+      "type": "string",
+      "description": "ID del pasajero"
+    },
+    "driver_id": {
+      "type": "string",
+      "description": "ID del conductor"
+    },
+    "preauth_id": {
+      "type": "string",
+      "description": "ID de pre-autorizaci\u00f3n del proveedor"
+    },
+    "payment_intent_id": {
+      "type": "string",
+      "description": "ID del PaymentIntent"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Monto total en MXN"
+    },
+    "fee_platform": {
+      "type": "number",
+      "description": "Comisi\u00f3n de la plataforma en MXN"
+    },
+    "fee_percentage": {
+      "type": "number",
+      "description": "Porcentaje de comisi\u00f3n aplicado"
+    },
+    "payout_driver": {
+      "type": "number",
+      "description": "Pago al conductor en MXN"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "preauthorized",
+        "pending_capture",
+        "captured",
+        "refunded",
+        "disputed",
+        "cancelled",
+        "failed"
+      ],
+      "default": "preauthorized",
+      "description": "Estado del pago"
+    },
+    "dispute_flag": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si hay disputa activa"
+    },
+    "retention_window_ends": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fin de ventana de retenci\u00f3n"
+    },
+    "captured_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha/hora de captura"
+    },
+    "refund_amount": {
+      "type": "number",
+      "description": "Monto reembolsado"
+    },
+    "refund_reason": {
+      "type": "string",
+      "description": "Raz\u00f3n de reembolso"
+    },
+    "provider_status": {
+      "type": "string",
+      "description": "Estado del proveedor de pagos"
+    },
+    "provider_response": {
+      "type": "string",
+      "description": "Respuesta del proveedor"
+    },
+    "payment_method_last4": {
+      "type": "string",
+      "description": "\u00daltimos 4 d\u00edgitos de tarjeta"
+    },
+    "payment_method_brand": {
+      "type": "string",
+      "description": "Marca de la tarjeta"
+    }
+  },
+  "required": [
+    "ride_id",
+    "passenger_id",
+    "amount"
+  ]
+}

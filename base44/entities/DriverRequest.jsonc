@@ -1,0 +1,49 @@
+{
+  "name": "DriverRequest",
+  "type": "object",
+  "properties": {
+    "ride_id": {
+      "type": "string",
+      "description": "ID del viaje"
+    },
+    "driver_id": {
+      "type": "string",
+      "description": "ID del conductor"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "accepted",
+        "rejected",
+        "expired",
+        "cancelled"
+      ],
+      "default": "pending",
+      "description": "Estado de la solicitud"
+    },
+    "notified_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Cuando se notific\u00f3"
+    },
+    "responded_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Cuando respondi\u00f3"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Cuando expira"
+    },
+    "distance_to_pickup": {
+      "type": "number",
+      "description": "Distancia al punto de recogida en km"
+    }
+  },
+  "required": [
+    "ride_id",
+    "driver_id"
+  ]
+}
